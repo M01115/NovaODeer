@@ -4,7 +4,47 @@ Puff the pufferfish, rigged from the team's PSD (`Untitled_Artwork.psd`) and ani
 
 - **`puff-expressions.html`**: open in a browser. 18 expressions plus 4 transition drafts (app opens, streak extended, thinking of feedback, countdown with overtime pop). The "Wearing" switch picks brush, hat, glasses, nothing, or all three.
 - **`gifs/`**: every expression as a looping GIF (420×420, 20 fps, paper background), one folder per accessory: `brush/`, `hat/`, `glasses/`, `nothing/`.
+- **`lottie/`**: every expression as a Lottie JSON file for `lottie-react-native`, one folder per accessory, plus `puff-overtime-*.json` (60s, plays once). Images are embedded, so each file works alone.
+- **`puff.config.json`**: how the app drives Puff: each state's file, length and whether it loops, plus the app moments (app opens, streak extended, feedback, countdown + overtime) as timed steps with Puff's lines.
 - **`assets/`**: the PSD split into layers (PNG, half size). `meta.json` has each layer's position and size in original PSD pixels, for rebuilding the rig in the app.
+
+## Using it in the app
+
+```bash
+npx expo install lottie-react-native
+```
+
+```tsx
+import LottieView from "lottie-react-native";
+import config from "../design/puff-animations/puff.config.json";
+
+// Metro needs static requires, so list the files you use, e.g.:
+const PUFF = {
+  hat: {
+    neutral: require("../design/puff-animations/lottie/hat/puff-neutral-hat.json"),
+    happy: require("../design/puff-animations/lottie/hat/puff-happy-hat.json"),
+    // ...
+  },
+};
+
+export function Puff({ state = "neutral", accessory = "hat", size = 180, onDone }) {
+  const s = config.states[state];
+  return (
+    <LottieView
+      key={`${state}-${accessory}`}        // restart when the state changes
+      source={PUFF[accessory][state]}
+      autoPlay
+      loop={s.loop}
+      onAnimationFinish={onDone}            // e.g. explode -> awkward
+      style={{ width: size, height: size }}
+    />
+  );
+}
+```
+
+Run a moment by walking its `steps` with timers: at each `atMs`, set the state and apply any `move`. For the countdown, pick the phase from seconds left; at 0:00 play `overtime`, and at +60s play `explode` starting 1.3s in (`progress` = 1300 / 5000) so it continues from the inflated look.
+
+Not carried into Lottie: Sad's slight color fade (a CSS filter). Everything else matches the HTML; `tools/check_lottie.mjs` renders both side by side to compare.
 
 ## Changes from the drawing
 
@@ -44,6 +84,16 @@ python tools/make_gifs.py --format apng            # animated PNG with alpha: lo
 ```
 
 GIF can't do soft transparency, so keep GIFs on a solid background.
+
+Lottie files (after editing the animation in `puff-expressions.html`):
+
+```bash
+python tools/make_render_page.py
+node tools/export_lottie.mjs                       # all states x accessories into lottie/
+node tools/check_lottie.mjs lottie _check happy:hat:0.4,explode:none:2.4   # side-by-side check images
+```
+
+The exporter plays the HTML rig frame by frame (30 fps; overtime 15 fps), reads each part's transform and opacity, and writes them as Lottie layers. Parts that never move inside are flattened into one image; eye masks become track mattes.
 
 ## Building it in Expo
 

@@ -1,7 +1,7 @@
 // Loaded into the recording page (see make_render_page.py). Shows one Puff state on a square stage and
 // retimes every animation so they all loop in the same length, then lets the recorder step to exact times.
 window.LOOP = {neutral:3, happy:1.8, sad:4, angry:1, zoning:5, rolling:4, flapping:3.6, bouncing:1.8, thinking:4,
-  nervous:2.4, awkward:4, puffup:3, deflate:3, squint:3.6, surprised:2.4, proud:2.4, sleepy:4, explode:5};
+  nervous:2.4, awkward:4, puffup:3, deflate:3, squint:3.6, surprised:2.4, proud:2.4, sleepy:4, explode:5, overtime:60};
 
 window.show = function (id, v, size, bg) {
   document.querySelector(".wrap").style.display = "none";
