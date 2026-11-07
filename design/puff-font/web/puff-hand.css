@@ -1,0 +1,49 @@
+/* Puff Hand: web setup. Paths assume this file sits in web/ next to ../fonts/. */
+
+@font-face {
+  font-family: "Puff Hand";
+  src: url("../fonts/PuffHand-Regular.woff2") format("woff2"),
+       url("../fonts/PuffHand-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+/* Colour font: orange rim, yellow top, cream belly. Colours live inside the font. */
+@font-face {
+  font-family: "Puff Hand Inlay";
+  src: url("../fonts/PuffHandInlay-Regular.woff2") format("woff2"),
+       url("../fonts/PuffHandInlay-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+/* Palette 1 inside the inlay font: blush rim, pink top, pale pink belly. */
+@font-palette-values --puff-blush {
+  font-family: "Puff Hand Inlay";
+  base-palette: 1;
+}
+
+:root {
+  --puff-graphite: #2B2D33;
+  --puff-paper: #FAFAF7;
+  --puff-rim: #F2A21B;
+  --puff-yellow: #FFC53D;
+  --puff-belly: #FFE7A1;
+  --puff-blush: #FF9DB0;
+}
+
+/* Everyday text: headings, prompt word, buttons. Graphite on paper or on blush. */
+.puff-ink {
+  font-family: "Puff Hand", "Nunito", system-ui, sans-serif;
+  color: var(--puff-graphite);
+  line-height: 1.12;
+  font-feature-settings: "calt" 1; /* letter roll, on by default */
+}
+
+/* Logo and celebrations. Use on graphite only, never yellow on white. */
+.puff-inlay {
+  font-family: "Puff Hand Inlay", "Puff Hand", system-ui, sans-serif;
+  line-height: 1.12;
+}
+.puff-inlay.blush { font-palette: --puff-blush; }
+
+/* Turn the roll off when letters must sit perfectly still (e.g. tabular numbers). */
+.puff-still { font-feature-settings: "calt" 0; }
