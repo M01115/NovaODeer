@@ -27,7 +27,6 @@ const ART_ASPECT = 0.9185;
 const EYES_ORIGIN = '70% 37%';
 
 export const SmudgeColors = {
-  shadow: 'rgba(0, 0, 0, 0.12)',
   sweat: '#9CD3F0',
 };
 
@@ -75,21 +74,6 @@ export function Smudge({
 
   return (
     <View style={{ width: s, height: s * 1.12 }} accessibilityLabel="Mascot">
-      {/* Ground shadow stays put while he breathes. */}
-      <View
-        style={[
-          styles.abs,
-          {
-            bottom: 0,
-            left: s * 0.18,
-            width: s * 0.64,
-            height: s * 0.06,
-            borderRadius: s,
-            backgroundColor: SmudgeColors.shadow,
-          },
-        ]}
-      />
-
       <Animated.View
         style={[
           styles.abs,
