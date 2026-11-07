@@ -1,0 +1,111 @@
+{
+  "version": 2,
+  "mascot": "Puff",
+  "about": "How the app drives Puff. States map to Lottie files; moments are timed sequences of states. Times in ms unless named Sec. Moves use points on a 300pt-wide phone screen: scale them by screenWidth / 300.",
+
+  "files": {
+    "lottie": "lottie/puff-{file}.json",
+    "outfitHelper": "lottie/withOutfit.ts",
+    "gif": "gifs/{look}/puff-{file}-{look}.gif",
+    "layers": "assets/meta.json"
+  },
+
+  "outfit": {
+    "about": "Any mix, chosen in the profile wardrobe. Same shape as mobile/src/data/outfit.ts. Every Lottie file contains all three accessories; withOutfit() hides the ones not worn.",
+    "slots": { "hat": ["none", "beret"], "eyes": ["none", "glasses"], "hold": ["none", "brush"] },
+    "default": { "hat": "beret", "eyes": "glasses", "hold": "brush" },
+    "gifLooks": ["all", "hat", "glasses", "brush", "nothing"]
+  },
+
+  "states": {
+    "neutral":   { "file": "neutral",         "loop": true,  "lengthMs": 3000, "use": "Default on every screen; Puff never looks frozen." },
+    "happy":     { "file": "happy",           "loop": true,  "lengthMs": 1800, "use": "Sketch posted, streak kept." },
+    "sad":       { "file": "sad",             "loop": true,  "lengthMs": 4000, "use": "Streak lost. Gentle, never guilt." },
+    "angry":     { "file": "angry",           "loop": true,  "lengthMs": 1000, "use": "Playful fake outrage only." },
+    "zoning":    { "file": "zoning-out",      "loop": true,  "lengthMs": 5000, "use": "User idle for a while; empty states." },
+    "rolling":   { "file": "rolling",         "loop": true,  "lengthMs": 4000, "use": "Screen transitions, short waits." },
+    "flapping":  { "file": "flapping",        "loop": true,  "lengthMs": 3600, "use": "Uploading; last 10 seconds of the timer." },
+    "bouncing":  { "file": "bouncing",        "loop": true,  "lengthMs": 1800, "use": "Waiting for friends; landing after the roll-in." },
+    "thinking":  { "file": "thinking",        "loop": true,  "lengthMs": 4000, "use": "AI writing the feedback or tomorrow's prompt." },
+    "nervous":   { "file": "nervous",         "loop": true,  "lengthMs": 2400, "use": "Before the blind-guess reveal; 30 seconds left." },
+    "awkward":   { "file": "awkward",         "loop": true,  "lengthMs": 4000, "use": "Wrong guess; after the overtime pop." },
+    "drawing":   { "file": "drawing",         "loop": true,  "lengthMs": 4000, "use": "Sketch timer with plenty of time left: Puff draws his own version alongside you." },
+    "puffup":    { "file": "puff-up",         "loop": true,  "lengthMs": 3000, "use": "Big moments: feedback lands, streak milestone." },
+    "deflate":   { "file": "deflate",         "loop": true,  "lengthMs": 3000, "use": "Blind guess was wrong." },
+    "squint":    { "file": "looking-closely", "loop": true,  "lengthMs": 3600, "use": "Reading the sketch; one minute left." },
+    "surprised": { "file": "surprised",       "loop": true,  "lengthMs": 2400, "use": "The AI answer arrives; a wild drawing." },
+    "proud":     { "file": "proud",           "loop": true,  "lengthMs": 2400, "use": "Week streak; everyone in the room posted." },
+    "sleepy":    { "file": "sleepy",          "loop": true,  "lengthMs": 4000, "use": "Night reminders, late streak saves." },
+    "explode":   { "file": "inflate-and-pop", "loop": false, "lengthMs": 5000, "use": "Overtime pop, or a huge celebration. Play once." },
+    "overtime":  { "file": "overtime",        "loop": false, "lengthMs": 60000, "use": "Slowly inflates over the first minute after time runs out. Play once, in real time." }
+  },
+
+  "moments": {
+    "appOpen": {
+      "lengthMs": 4100,
+      "steps": [
+        { "atMs": 0,    "state": "neutral",  "hideShadow": true, "move": { "from": { "x": -230, "y": 110, "scale": 1.25, "rotate": -720 }, "to": { "x": 0, "y": 110, "scale": 1.25, "rotate": 0 }, "durationMs": 1100, "easing": [0.2, 0.75, 0.3, 1] } },
+        { "atMs": 1150, "state": "bouncing", "hideShadow": false },
+        { "atMs": 2050, "state": "happy",    "show": ["wordmark"], "wordmark": "A Sketch a Day" },
+        { "atMs": 3300, "state": "neutral",  "move": { "to": { "x": 0, "y": 0, "scale": 1, "rotate": 0 }, "durationMs": 800, "easing": [0.3, 0.9, 0.3, 1] }, "hide": ["wordmark"], "show": ["home"] }
+      ]
+    },
+
+    "streakExtended": {
+      "lengthMs": 4200,
+      "steps": [
+        { "atMs": 0,    "state": "neutral" },
+        { "atMs": 300,  "state": "puffup" },
+        { "atMs": 900,  "ui": "streakPill.pop", "note": "pill scales to 1.3 and back by 1350ms; flame grows; number rolls up to the new count" },
+        { "atMs": 1500, "ui": ["confetti", "streakToast.slideUp"], "toast": { "title": "{days}-day streak!", "body": "You've sketched every day this week." } },
+        { "atMs": 2300, "state": "proud" },
+        { "atMs": 4200, "state": "happy" }
+      ]
+    },
+
+    "feedback": {
+      "steps": [
+        { "atMs": 0,    "state": "squint",   "ui": "sketchScanLine.on" },
+        { "atMs": 2200, "state": "thinking", "ui": "sketchScanLine.off" }
+      ],
+      "whileWaiting": { "alternate": ["squint", "thinking"], "everyMs": 2000 },
+      "onResult": [
+        { "atMs": 0,   "state": "surprised" },
+        { "atMs": 700, "state": "happy", "say": "{feedback}", "typeMsPerChar": 28 }
+      ]
+    },
+
+    "countdown": {
+      "durationSec": 300,
+      "phases": [
+        { "whenSecondsLeftAbove": 60, "state": "drawing",  "say": "I'm drawing one too. Take your time." },
+        { "whenSecondsLeftAbove": 30, "state": "squint",   "say": "One minute left!" },
+        { "whenSecondsLeftAbove": 10, "state": "nervous",  "say": "30 seconds..." },
+        { "whenSecondsLeftAbove": 0,  "state": "flapping", "say": "Wrap it up!", "ui": "timer.pulse" }
+      ],
+      "overtime": {
+        "timer": "count up from +0:00 in Ink.red (#FF5A1F)",
+        "state": "overtime",
+        "say": "Time's up... still drawing?",
+        "sayAtSec": { "30": "Puff can't hold it much longer!" },
+        "popAtSec": 60,
+        "pop": { "state": "explode", "startAtMs": 1300, "holdMs": 3800, "note": "start the explode file 1.3s in, where it is already inflated, so it continues smoothly from overtime" },
+        "after": { "state": "awkward", "say": "Okay, okay. Snap it when you're ready." },
+        "tone": "No scolding. The timer just keeps counting and the snap button stays available."
+      }
+    }
+  },
+
+  "fonts": {
+    "display": { "family": "Puff Hand", "files": "design/puff-font/fonts/", "use": "Headings, the prompt word, buttons, timer, Puff's big moments" },
+    "body": { "family": "Nunito", "use": "Everything else (already loaded in the app)" }
+  },
+
+  "colors": {
+    "about": "Explicai palette, same values as mobile/src/constants/theme.ts",
+    "background": "#F6EFE4", "card": "#FFFFFF", "cardSelected": "#EFE5D6",
+    "text": "#161616", "textSecondary": "#8C8173",
+    "yellow": "#FFD21F", "yellowDeep": "#F5B800", "orange": "#FF5A1F", "blue": "#18B4F0", "pink": "#FFA9D4",
+    "ink": "#161616", "pencil": "#C9BFB0", "urgent": "#FF5A1F"
+  }
+}
