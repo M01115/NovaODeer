@@ -6,7 +6,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { openBrowser } from "./cdp.mjs";
-import { FILE_NAMES, SET_NAMES } from "./states.mjs";
+import { FILE_NAMES } from "./states.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const [lottieDir, outDir, list] = [resolve(process.argv[2]), resolve(process.argv[3]), process.argv[4]];
@@ -17,14 +17,17 @@ try {
   await b.evaluate(`new Promise((res,rej)=>{const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js";s.onload=res;s.onerror=rej;document.head.appendChild(s);})`);
   for (const item of list.split(",")) {
     const [x, v, sec] = item.split(":");
-    const file = pathToFileURL(join(lottieDir, SET_NAMES[v], `puff-${FILE_NAMES[x]}-${SET_NAMES[v]}.json`)).href;
+    const file = pathToFileURL(join(lottieDir, `puff-${FILE_NAMES[x]}.json`)).href;
+    const hide = { hat: !/hat|all/.test(v), glasses: !/glasses|all/.test(v), brush: !/brush|all/.test(v) };
     await b.evaluate(`(async()=>{
-      const info=show(${JSON.stringify(x)},${JSON.stringify(v)},${S},"#FAFAF7");
+      const info=show(${JSON.stringify(x)},${JSON.stringify(v)},${S},"#F6EFE4");
       frame(${+sec * 1000});
       let box=document.getElementById("lt"); if(box){window._la&&window._la.destroy();box.remove();}
-      box=document.createElement("div"); box.id="lt"; box.style.cssText="position:fixed;left:${S}px;top:0;width:${S}px;height:${S}px;background:#FAFAF7";
+      box=document.createElement("div"); box.id="lt"; box.style.cssText="position:fixed;left:${S}px;top:0;width:${S}px;height:${S}px;background:#F6EFE4";
       document.body.appendChild(box);
       const data=await (await fetch(${JSON.stringify(file)})).json();
+      const hide=${JSON.stringify(hide)};   // same rule as lottie/withOutfit.ts
+      data.layers=data.layers.map(l=>{const m=/^acc:([a-z]+):/.exec(l.nm||"");return m&&hide[m[1]]?{...l,hd:true,ks:{...l.ks,o:{a:0,k:0}}}:l;});
       window._la=lottie.loadAnimation({container:box,renderer:"svg",loop:false,autoplay:false,animationData:data});
       await new Promise(r=>window._la.addEventListener("DOMLoaded",r));
       window._la.goToAndStop(${+sec}*data.fr,true);

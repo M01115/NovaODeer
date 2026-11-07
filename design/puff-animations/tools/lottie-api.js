@@ -11,19 +11,17 @@
     const p = fetch(href).then(r => r.blob()).then(b => new Promise(res => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(b); }));
     imgCache.set(href, p); return p;
   }
-  let fontCSS = null;                       // Fredoka embedded so rasterized text (Zzz, !, POP!) keeps its font
+  let fontCSS = null;                       // Puff Hand embedded so rasterized text (Zzz, !, POP!) keeps the app font
   async function getFontCSS() {
     if (fontCSS !== null) return fontCSS;
     fontCSS = "";
-    try {
-      const css = await (await fetch("https://fonts.googleapis.com/css2?family=Fredoka:wght@600&display=swap")).text();
-      const blocks = css.split("@font-face").slice(1);
-      const latin = blocks.find(b => b.includes("U+0000-00FF")) || blocks[blocks.length - 1];
-      const url = latin.match(/url\((https:[^)]+)\)/)[1];
-      fontCSS = `@font-face{font-family:Fredoka;font-weight:600;src:url(${await toDataURL(url)}) format('woff2')}`;
-    } catch (e) { console.warn("Fredoka not embedded", e); }
+    try { fontCSS = `@font-face{font-family:"Puff Hand";src:url(${await toDataURL("assets/PuffHand-Regular.woff2")}) format('woff2')}`; }
+    catch (e) { console.warn("Puff Hand not embedded", e); }
     return fontCSS;
   }
+  // Accessory layers are named acc:<item>:... so the app can hide what the outfit doesn't include.
+  const ACC = { beret: "hat", glasses: "glasses", brush: "brush" };
+  const accOf = el => { const a = el.closest(".beret,.glasses,.brush"); return a ? ACC[[...a.classList].find(c => ACC[c])] : null; };
   const loadImg = src => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; });
 
   // Rasterize an element's content (without its own transform) in its local coordinates.
@@ -55,7 +53,11 @@
       for (const im of clone.querySelectorAll("image")) im.setAttribute("href", await toDataURL(im.getAttribute("href")));
       const hasText = !!clone.querySelector("text") || clone.tagName === "text";
       const style = hasText ? `<style>${await getFontCSS()}</style>` : "";
-      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x} ${y} ${w} ${h}" width="${W}" height="${H}">${style}<defs>${defs}</defs>${new XMLSerializer().serializeToString(clone)}</svg>`;
+      // keep what the piece inherits from its parent groups (ink color, stroke width, font), or bare strokes vanish
+      const cs = getComputedStyle(el.parentNode);
+      const inherit = ["fill", "stroke", "stroke-width", "stroke-linecap", "stroke-linejoin", "font-family", "font-size", "font-weight"]
+        .map(k => `${k}:${cs.getPropertyValue(k)}`).join(";");
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x} ${y} ${w} ${h}" width="${W}" height="${H}">${style}<defs>${defs}</defs><g style="${inherit.replace(/"/g, "'")}">${new XMLSerializer().serializeToString(clone)}</g></svg>`;
       const im = await loadImg("data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svg))));
       ctx.drawImage(im, 0, 0, W, H);
     }
@@ -150,7 +152,8 @@
 
     async function build(n, parentInd, cumOps, maskInfo) {
       const ops = n.ops.map((o, i) => o * cumOps[i]);
-      const name = (n.el.getAttribute("class") || n.el.tagName).split(" ")[0];
+      const acc = accOf(n.el);
+      const name = (acc ? `acc:${acc}:` : "") + (n.el.getAttribute("class") || n.el.tagName).split(" ")[0];
       const maskId = (n.el.getAttribute("mask") || "").match(/#([^)]+)/)?.[1];
       if (!n.dynBelow) {                                     // leaf: flatten into one image layer
         let matte = null;

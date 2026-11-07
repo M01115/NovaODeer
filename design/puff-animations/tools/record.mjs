@@ -2,7 +2,7 @@
 //
 //   node record.mjs [outDir] [states,comma,separated]
 //
-// Env: SIZE (px, default 420), FPS (default 20), BG (stage color, default #FAFAF7; "transparent" for alpha PNGs),
+// Env: SIZE (px, default 420), FPS (default 20), BG (stage color, default #F6EFE4 app cream; "transparent" for alpha PNGs),
 //      SETS (default brush,hat,glasses,none), BROWSER (path to msedge/chrome), PORT (default 9339).
 import { mkdirSync, writeFileSync, existsSync } from "node:fs";
 import { join, resolve, dirname } from "node:path";
@@ -16,7 +16,7 @@ if (!existsSync(page)) { console.error("Run make_render_page.py first (missing _
 const outDir = resolve(process.argv[2] || join(here, "..", "_frames"));
 const onlyIds = process.argv[3];
 const SIZE = +(process.env.SIZE || 420), FPS = +(process.env.FPS || 20);
-const BG = process.env.BG || "#FAFAF7";
+const BG = process.env.BG || "#F6EFE4";   // app background (Explicai cream)
 const SETS = (process.env.SETS || "brush,hat,glasses,none").split(",");
 const IDS = STATES.filter(i => !onlyIds || onlyIds.split(",").includes(i));
 

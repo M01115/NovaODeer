@@ -24,8 +24,8 @@ FPS = int(os.environ.get("FPS", 20))
 NAMES = {"neutral": "neutral", "happy": "happy", "sad": "sad", "angry": "angry", "zoning": "zoning-out", "rolling": "rolling",
          "flapping": "flapping", "bouncing": "bouncing", "thinking": "thinking", "nervous": "nervous", "awkward": "awkward",
          "puffup": "puff-up", "deflate": "deflate", "squint": "looking-closely", "surprised": "surprised", "proud": "proud",
-         "sleepy": "sleepy", "explode": "inflate-and-pop"}
-SETS = {"brush": "brush", "hat": "hat", "glasses": "glasses", "none": "nothing"}
+         "sleepy": "sleepy", "explode": "inflate-and-pop", "drawing": "drawing"}
+SETS = {"brush": "brush", "hat": "hat", "glasses": "glasses", "none": "nothing", "all": "all"}
 
 for d in sorted(glob.glob(str(frames_root / "*__*"))):
     x, v = os.path.basename(d).split("__")

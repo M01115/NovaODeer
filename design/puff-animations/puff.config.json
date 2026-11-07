@@ -1,14 +1,21 @@
 {
-  "version": 1,
+  "version": 2,
+  "mascot": "Puff",
   "about": "How the app drives Puff. States map to Lottie files; moments are timed sequences of states. Times in ms unless named Sec. Moves use points on a 300pt-wide phone screen: scale them by screenWidth / 300.",
 
   "files": {
-    "lottie": "lottie/{accessory}/puff-{file}-{accessory}.json",
-    "gif": "gifs/{accessory}/puff-{file}-{accessory}.gif",
+    "lottie": "lottie/puff-{file}.json",
+    "outfitHelper": "lottie/withOutfit.ts",
+    "gif": "gifs/{look}/puff-{file}-{look}.gif",
     "layers": "assets/meta.json"
   },
-  "accessories": ["brush", "hat", "glasses", "nothing"],
-  "defaultAccessory": "hat",
+
+  "outfit": {
+    "about": "Any mix, chosen in the profile wardrobe. Same shape as mobile/src/data/outfit.ts. Every Lottie file contains all three accessories; withOutfit() hides the ones not worn.",
+    "slots": { "hat": ["none", "beret"], "eyes": ["none", "glasses"], "hold": ["none", "brush"] },
+    "default": { "hat": "beret", "eyes": "glasses", "hold": "brush" },
+    "gifLooks": ["all", "hat", "glasses", "brush", "nothing"]
+  },
 
   "states": {
     "neutral":   { "file": "neutral",         "loop": true,  "lengthMs": 3000, "use": "Default on every screen; Puff never looks frozen." },
@@ -22,6 +29,7 @@
     "thinking":  { "file": "thinking",        "loop": true,  "lengthMs": 4000, "use": "AI writing the feedback or tomorrow's prompt." },
     "nervous":   { "file": "nervous",         "loop": true,  "lengthMs": 2400, "use": "Before the blind-guess reveal; 30 seconds left." },
     "awkward":   { "file": "awkward",         "loop": true,  "lengthMs": 4000, "use": "Wrong guess; after the overtime pop." },
+    "drawing":   { "file": "drawing",         "loop": true,  "lengthMs": 4000, "use": "Sketch timer with plenty of time left: Puff draws his own version alongside you." },
     "puffup":    { "file": "puff-up",         "loop": true,  "lengthMs": 3000, "use": "Big moments: feedback lands, streak milestone." },
     "deflate":   { "file": "deflate",         "loop": true,  "lengthMs": 3000, "use": "Blind guess was wrong." },
     "squint":    { "file": "looking-closely", "loop": true,  "lengthMs": 3600, "use": "Reading the sketch; one minute left." },
@@ -38,7 +46,7 @@
       "steps": [
         { "atMs": 0,    "state": "neutral",  "hideShadow": true, "move": { "from": { "x": -230, "y": 110, "scale": 1.25, "rotate": -720 }, "to": { "x": 0, "y": 110, "scale": 1.25, "rotate": 0 }, "durationMs": 1100, "easing": [0.2, 0.75, 0.3, 1] } },
         { "atMs": 1150, "state": "bouncing", "hideShadow": false },
-        { "atMs": 2050, "state": "happy",    "show": ["wordmark"] },
+        { "atMs": 2050, "state": "happy",    "show": ["wordmark"], "wordmark": "A Sketch a Day" },
         { "atMs": 3300, "state": "neutral",  "move": { "to": { "x": 0, "y": 0, "scale": 1, "rotate": 0 }, "durationMs": 800, "easing": [0.3, 0.9, 0.3, 1] }, "hide": ["wordmark"], "show": ["home"] }
       ]
     },
@@ -70,13 +78,13 @@
     "countdown": {
       "durationSec": 300,
       "phases": [
-        { "whenSecondsLeftAbove": 60, "state": "neutral",  "say": "Take your time. Any paper works." },
+        { "whenSecondsLeftAbove": 60, "state": "drawing",  "say": "I'm drawing one too. Take your time." },
         { "whenSecondsLeftAbove": 30, "state": "squint",   "say": "One minute left!" },
         { "whenSecondsLeftAbove": 10, "state": "nervous",  "say": "30 seconds..." },
         { "whenSecondsLeftAbove": 0,  "state": "flapping", "say": "Wrap it up!", "ui": "timer.pulse" }
       ],
       "overtime": {
-        "timer": "count up from +0:00 in blush deep (#E0507A)",
+        "timer": "count up from +0:00 in Ink.red (#FF5A1F)",
         "state": "overtime",
         "say": "Time's up... still drawing?",
         "sayAtSec": { "30": "Puff can't hold it much longer!" },
@@ -88,9 +96,16 @@
     }
   },
 
+  "fonts": {
+    "display": { "family": "Puff Hand", "files": "design/puff-font/fonts/", "use": "Headings, the prompt word, buttons, timer, Puff's big moments" },
+    "body": { "family": "Nunito", "use": "Everything else (already loaded in the app)" }
+  },
+
   "colors": {
-    "paper": "#FAFAF7", "card": "#FFFFFF", "line": "#E4E4DD", "pill": "#F0F0EA",
-    "graphite": "#2B2D33", "pencil": "#83868D", "puff": "#FFC53D", "belly": "#FFE7A1",
-    "blush": "#FF9DB0", "blushDeep": "#E0507A"
+    "about": "Explicai palette, same values as mobile/src/constants/theme.ts",
+    "background": "#F6EFE4", "card": "#FFFFFF", "cardSelected": "#EFE5D6",
+    "text": "#161616", "textSecondary": "#8C8173",
+    "yellow": "#FFD21F", "yellowDeep": "#F5B800", "orange": "#FF5A1F", "blue": "#18B4F0", "pink": "#FFA9D4",
+    "ink": "#161616", "pencil": "#C9BFB0", "urgent": "#FF5A1F"
   }
 }
