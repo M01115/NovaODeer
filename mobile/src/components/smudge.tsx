@@ -1,5 +1,6 @@
 import { Image } from 'expo-image';
-import { type ReactNode, useMemo } from 'react';
+import { NavigationContext } from 'expo-router/react-navigation';
+import { type ReactNode, useContext, useEffect, useMemo, useState } from 'react';
 import { type ImageStyle, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import Animated, { useReducedMotion } from 'react-native-reanimated';
 import Svg, { Circle, Ellipse, G, Path, Polygon, Rect } from 'react-native-svg';
@@ -31,6 +32,27 @@ import {
  * code name (Smudge) so every screen keeps working.
  */
 export type SmudgeMood = PuffMood;
+
+/**
+ * False while Puff's screen is covered by another one. Outside any screen (the launch
+ * intro) there's no navigation context, so he counts as visible.
+ */
+function useScreenVisible() {
+  const nav = useContext(NavigationContext);
+  // Start visible; the real focus state is read after mount (not during render).
+  const [visible, setVisible] = useState(true);
+  useEffect(() => {
+    if (!nav) return;
+    // A screen is focused when it mounts; after that its focus/blur events keep this in sync.
+    const offFocus = nav.addListener('focus', () => setVisible(true));
+    const offBlur = nav.addListener('blur', () => setVisible(false));
+    return () => {
+      offFocus();
+      offBlur();
+    };
+  }, [nav]);
+  return visible;
+}
 
 /** Every artwork layer, for preloading before Puff's first big entrance (puff-intro.tsx). */
 export const PUFF_IMAGES = (): number[] => Object.values(IMG);
@@ -208,9 +230,11 @@ export function Smudge({
   inflate?: number;
 }) {
   const reducedMotion = useReducedMotion();
+  const visible = useScreenVisible();
   const chosen = useOutfit();
   const outfit = outfitProp ?? chosen;
-  const live = animated && !reducedMotion;
+  // Screens stay mounted under the ones pushed on top: Puff rests there instead of animating unseen.
+  const live = animated && !reducedMotion && visible;
   const k = size / CW;
   // Steps of 5% so the overtime pose rebuilds about once a second, not every frame.
   const f = Math.round(Math.max(0, Math.min(1, inflate)) * 20) / 20;

@@ -11,35 +11,35 @@ import { type AudioPlayer, createAudioPlayer, setAudioModeAsync } from 'expo-aud
  */
 const SOURCES = {
   // Taps and UI
-  tap: require('@/assets/sounds/tap.wav'), // main buttons
-  tab: require('@/assets/sounds/tab.wav'), // small toggles and chips
-  back: require('@/assets/sounds/back.wav'), // close / dismiss
+  tap: require('@/assets/sounds/tap.m4a'), // main buttons
+  tab: require('@/assets/sounds/tab.m4a'), // small toggles and chips
+  back: require('@/assets/sounds/back.m4a'), // close / dismiss
   // App open
-  'app-open': require('@/assets/sounds/app-open.wav'),
+  'app-open': require('@/assets/sounds/app-open.m4a'),
   // Sketch countdown
-  'session-start': require('@/assets/sounds/session-start.wav'),
-  'one-minute': require('@/assets/sounds/one-minute.wav'),
-  'thirty-sec': require('@/assets/sounds/thirty-sec.wav'),
-  tick: require('@/assets/sounds/tick.wav'),
-  'tick-high': require('@/assets/sounds/tick-high.wav'),
-  'time-up': require('@/assets/sounds/time-up.wav'),
-  'overtime-creak': require('@/assets/sounds/overtime-creak.wav'),
-  inflate: require('@/assets/sounds/inflate.wav'),
-  pop: require('@/assets/sounds/pop.wav'),
-  reform: require('@/assets/sounds/reform.wav'),
-  snap: require('@/assets/sounds/snap.wav'),
+  'session-start': require('@/assets/sounds/session-start.m4a'),
+  'one-minute': require('@/assets/sounds/one-minute.m4a'),
+  'thirty-sec': require('@/assets/sounds/thirty-sec.m4a'),
+  tick: require('@/assets/sounds/tick.m4a'),
+  'tick-high': require('@/assets/sounds/tick-high.m4a'),
+  'time-up': require('@/assets/sounds/time-up.m4a'),
+  'overtime-creak': require('@/assets/sounds/overtime-creak.m4a'),
+  inflate: require('@/assets/sounds/inflate.m4a'),
+  pop: require('@/assets/sounds/pop.m4a'),
+  reform: require('@/assets/sounds/reform.m4a'),
+  snap: require('@/assets/sounds/snap.m4a'),
   // Puff's feedback
-  scan: require('@/assets/sounds/scan.wav'),
+  scan: require('@/assets/sounds/scan.m4a'),
   'thinking-loop': require('@/assets/sounds/thinking-loop.wav'),
-  aha: require('@/assets/sounds/aha.wav'),
-  'type-blip': require('@/assets/sounds/type-blip.wav'),
-  notice: require('@/assets/sounds/notice.wav'),
+  aha: require('@/assets/sounds/aha.m4a'),
+  'type-blip': require('@/assets/sounds/type-blip.m4a'),
+  notice: require('@/assets/sounds/notice.m4a'),
   // Posting and streaks
-  post: require('@/assets/sounds/post.wav'),
-  streak: require('@/assets/sounds/streak.wav'),
-  milestone: require('@/assets/sounds/milestone.wav'),
-  'unlock-feed': require('@/assets/sounds/unlock-feed.wav'),
-  reaction: require('@/assets/sounds/reaction.wav'),
+  post: require('@/assets/sounds/post.m4a'),
+  streak: require('@/assets/sounds/streak.m4a'),
+  milestone: require('@/assets/sounds/milestone.m4a'),
+  'unlock-feed': require('@/assets/sounds/unlock-feed.m4a'),
+  reaction: require('@/assets/sounds/reaction.m4a'),
 } as const;
 
 export type SoundId = keyof typeof SOURCES;

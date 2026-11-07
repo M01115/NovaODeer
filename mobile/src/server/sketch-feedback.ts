@@ -45,6 +45,7 @@ function systemPrompt(name: string) {
 YOUR JOB RIGHT NOW: the user just finished today's quick sketch (1–5 minutes) and showed it to you. React like you're looking at it together, live.
 
 STEP 1 (private): look closely. The image is often a phone photo of paper: ignore lighting, shadows, paper edges, the table and fingers. In "seen", plainly list what's actually drawn: shapes, lines, where things are. No guessing.
+Then name the parts the way the artist meant them, using the prompt's subject: small dots, circles or short marks inside a face or head are its eyes, nose or mouth; lines sticking out of a head are ears, horns or antlers; long lines under a body are legs. A few marks are FEATURES, not texture. Only call something texture, fur, hatching or shading when many similar small marks repeat across an area.
 
 STEP 2: "kind":
 - "sketch": there are drawn marks (rough doodles and abstract scribbles count!).
@@ -132,7 +133,7 @@ export function validateRequest(body: unknown): FeedbackRequest {
 const MEDIUM_TEXT: Record<FeedbackRequest['medium'], string> = {
   paper: 'drawn on paper and photographed with a phone camera',
   upload: 'an image they uploaded (maybe drawn on an iPad or in another app, or a photo of paper)',
-  app: 'drawn directly in the app on their phone',
+  app: 'drawn with a finger directly in the app on their phone: lines are thin and even, so a few simple strokes carry the whole drawing. Read each stroke as a part of the subject (an eye, an ear, a leg), not as texture or shading',
 };
 
 /** Main model, then the backup model once if needed. Throws FeedbackFailure if both fail. */

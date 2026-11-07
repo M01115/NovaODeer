@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { type ComponentRef, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import Animated, { useAnimatedProps, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -35,6 +35,36 @@ type Stroke = { d: string; color: string; width: number };
 function formatClock(totalSeconds: number) {
   const s = Math.max(0, Math.floor(totalSeconds));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+/**
+ * The page as a JPEG data URI, drawn from the strokes themselves (web, where view-shot
+ * can't snapshot a view; also the fallback if a snapshot fails). Same look as on screen:
+ * white paper, round-capped strokes. The AI accepts JPEG/PNG/WebP data URIs.
+ */
+async function strokesToJpeg(strokes: Stroke[], w: number, h: number): Promise<string | undefined> {
+  if (typeof document === 'undefined') return undefined;
+  const scale = 2;
+  const paths = strokes
+    .map(
+      (s) =>
+        `<path d="${s.d}" stroke="${s.color}" stroke-width="${s.width}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`
+    )
+    .join('');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><rect width="${w}" height="${h}" fill="${PAPER}"/>${paths}</svg>`;
+  const img = new window.Image();
+  await new Promise<void>((resolve, reject) => {
+    img.onload = () => resolve();
+    img.onerror = () => reject(new Error('page render failed'));
+    img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  });
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(w * scale);
+  canvas.height = Math.round(h * scale);
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return undefined;
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL('image/jpeg', 0.88);
 }
 
 /**
@@ -120,22 +150,34 @@ export default function DrawScreen() {
     if (saving) return;
     setSaving(true);
     let image: string | undefined;
-    try {
-      image = await captureRef(pageRef, {
-        format: 'png',
-        quality: 1,
-        // A data URI everywhere: shown in the feed and sent to Puff's AI feedback.
-        result: 'data-uri',
-      });
-    } catch {
-      // Still count the sketch if the snapshot fails.
+    const size = pageSize.current ?? { width: 360, height: 480 };
+    if (Platform.OS !== 'web') {
+      try {
+        image = await captureRef(pageRef, {
+          format: 'png',
+          quality: 1,
+          // A data URI everywhere: shown in the feed and sent to Puff's AI feedback.
+          result: 'data-uri',
+        });
+      } catch {
+        // Fall back to drawing the strokes ourselves below.
+      }
+    }
+    if (!image) {
+      // Web (no view snapshots there) or a failed snapshot: render the strokes, so drawn
+      // sketches get Puff's AI feedback exactly like scanned and uploaded ones.
+      try {
+        image = await strokesToJpeg(strokes, size.width, size.height);
+      } catch {
+        // Still count the sketch if this fails too.
+      }
     }
     markPostedToday({ id: toDateKey(new Date()), seconds: elapsed, image, medium: 'app' });
-    if (image && pageSize.current) {
+    if (image) {
       setSubmission({
         image,
-        width: pageSize.current.width,
-        height: pageSize.current.height,
+        width: size.width,
+        height: size.height,
         medium: 'app',
         seconds: Math.round(elapsed),
         prompt: prompt.text,

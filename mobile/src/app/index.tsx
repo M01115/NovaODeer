@@ -74,10 +74,11 @@ export default function HomeScreen() {
   const drag = useSharedValue(0);
   const screenH = useSharedValue(800);
   const [archiveOpen, setArchiveOpen] = useState(false);
-  // Mount the archive just after Home appears, so the first pull is already smooth.
+  // Mount the archive once the launch intro is over (it runs ~3.9s), so building its cards
+  // never competes with Puff's entrance; pulling down earlier mounts it right away.
   const [archiveReady, setArchiveReady] = useState(false);
   useEffect(() => {
-    const id = setTimeout(() => setArchiveReady(true), 400);
+    const id = setTimeout(() => setArchiveReady(true), 4500);
     return () => clearTimeout(id);
   }, []);
 

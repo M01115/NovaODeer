@@ -251,7 +251,7 @@ export function ChapterWrapped({
 }
 
 /** A handwritten speech bubble from the mascot, tail pointing up at it. */
-function Bubble({
+export function Bubble({
   children,
   muted,
   active,
