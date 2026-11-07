@@ -3,7 +3,7 @@ import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
-import { Colors } from '@/constants/theme';
+import { Colors, nunito } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useHasHydrated } from '@/hooks/use-has-hydrated';
 
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   },
   time: {
     fontSize: 16,
-    fontWeight: 600,
+    fontFamily: nunito(600),
     width: 54,
   },
   island: {

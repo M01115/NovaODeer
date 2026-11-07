@@ -2,7 +2,7 @@ import { StyleSheet } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { nunito, Spacing } from '@/constants/theme';
 
 type Props = {
   emoji: string;
@@ -32,6 +32,7 @@ const styles = StyleSheet.create({
     borderRadius: Spacing.four,
   },
   emoji: {
+    fontFamily: nunito(400),
     fontSize: 40,
     lineHeight: 48,
   },

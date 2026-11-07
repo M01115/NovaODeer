@@ -21,8 +21,11 @@ import { SketchThumb } from '@/components/sketch-thumb';
 import { Smudge } from '@/components/smudge';
 import { formatShortDate, fromDateKey, getHistory, getWeekStats, toDateKey, type Day } from '@/data/history';
 import { REACTIONS } from '@/data/reactions';
+import { nunito, Palette } from '@/constants/theme';
 
-const BG = '#F2F1EE';
+const BG = Palette.cream;
+/** Weekly stats pockets cycle through the palette. */
+const POCKET_COLORS = ['#FFE680', '#BDE7FA', '#FFD1E6'];
 const INK = '#161616';
 const MUTED = '#8A877F';
 const PENCIL = '#CFCBC2';
@@ -33,10 +36,8 @@ const SPACING = 100;
 const HOVER_SCALE = 1.45;
 /** Cards per full left-right wiggle of the S. */
 const WIGGLE = 7;
-/** Space above the first card, for the title. */
-const TOP = 150;
-/** Space below the last card, so it can reach the middle of the screen. */
-const BOTTOM = 460;
+/** Minimum space above the first card (room for the title). */
+const MIN_TOP = 150;
 /** Height of the prompt/date strip at the top of each card. */
 const HEADER_H = 24;
 const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
@@ -84,6 +85,10 @@ export function ArchiveView({ onClose }: { onClose: () => void }) {
   const amp = Math.max(0, width / 2 - cardW / 2 - 14);
   // Vertical middle of a card, from its top edge.
   const cardMid = (cardW + 24) / 2;
+  // Enough room above the first card and below the last that every card, including both
+  // ends, can scroll into the middle of the screen and become the hovered one.
+  const top = Math.max(MIN_TOP, viewHeight / 2 - cardMid);
+  const bottom = Math.max(MIN_TOP, viewHeight / 2 - cardMid + 40);
 
   // Lay the sketches on the path. Weeks count from the first day in the history.
   const firstDay = history[0]?.date;
@@ -97,11 +102,12 @@ export function ArchiveView({ onClose }: { onClose: () => void }) {
       week: weekOf(day),
       // A sine wave down the screen: the S.
       x: width / 2 + amp * Math.sin((2 * Math.PI * index) / WIGGLE),
-      y: TOP + index * SPACING,
+      y: top + index * SPACING,
     }));
-  }, [width, firstDay, sketches, amp]);
+  }, [width, firstDay, sketches, amp, top]);
 
-  const contentH = TOP + Math.max(0, last) * SPACING + BOTTOM;
+  // Last card top + its height (cardMid * 2) + room to reach the middle.
+  const contentH = top + Math.max(0, last) * SPACING + cardMid * 2 + bottom;
 
   // One stats pocket per week, on the side the path isn't using.
   const pockets = useMemo(() => {
@@ -125,13 +131,14 @@ export function ArchiveView({ onClose }: { onClose: () => void }) {
   useAnimatedReaction(
     () => {
       const centre = scrollY.get() + viewH.get() / 2;
-      return Math.min(last, Math.max(0, Math.round((centre - TOP - cardMid) / SPACING)));
+      return Math.min(last, Math.max(0, Math.round((centre - top - cardMid) / SPACING)));
     },
     (current, previous) => {
       if (current === previous) return;
       focus.set(current);
       scheduleOnRN(setFocusIndex, current);
-    }
+    },
+    [top, cardMid, last]
   );
 
   const onScroll = useAnimatedScrollHandler((e) => {
@@ -139,7 +146,7 @@ export function ArchiveView({ onClose }: { onClose: () => void }) {
   });
 
   const centreOn = (index: number, animated = true) => {
-    const y = TOP + index * SPACING + cardMid - viewH.get() / 2;
+    const y = top + index * SPACING + cardMid - viewH.get() / 2;
     scrollRef.current?.scrollTo({ y: Math.max(0, y), animated });
   };
 
@@ -311,7 +318,7 @@ function WeekPocket({
   pocket,
   width,
 }: {
-  pocket: { side: number; y: number; stats: ReturnType<typeof getWeekStats> };
+  pocket: { week: number; side: number; y: number; stats: ReturnType<typeof getWeekStats> };
   width: number;
 }) {
   const w = Math.min(width * 0.27, 108);
@@ -323,7 +330,7 @@ function WeekPocket({
       <View style={[styles.pocketMascot, pocket.side > 0 && styles.pocketMascotRight]}>
         <Smudge size={40} animated />
       </View>
-      <View style={styles.statsCard}>
+      <View style={[styles.statsCard, { backgroundColor: POCKET_COLORS[pocket.week % POCKET_COLORS.length] }]}>
         <Text style={styles.statsRange}>
           {formatShortDate(stats.from)} – {formatShortDate(stats.to)}
         </Text>
@@ -396,13 +403,13 @@ const styles = StyleSheet.create({
     color: INK,
     fontSize: 24,
     lineHeight: 30,
-    fontWeight: 700,
+    fontFamily: nunito(700),
     letterSpacing: -0.5,
   },
   subline: {
     color: MUTED,
     fontSize: 13,
-    fontWeight: 600,
+    fontFamily: nunito(600),
     marginTop: 4,
   },
   card: {
@@ -426,12 +433,12 @@ const styles = StyleSheet.create({
     flex: 1,
     color: INK,
     fontSize: 11,
-    fontWeight: 600,
+    fontFamily: nunito(600),
   },
   cardDate: {
     color: MUTED,
     fontSize: 10.5,
-    fontWeight: 500,
+    fontFamily: nunito(500),
   },
   pocket: {
     position: 'absolute',
@@ -458,7 +465,7 @@ const styles = StyleSheet.create({
   statsRange: {
     color: MUTED,
     fontSize: 9.5,
-    fontWeight: 700,
+    fontFamily: nunito(700),
     letterSpacing: 0.3,
   },
   statsBigRow: {
@@ -470,18 +477,18 @@ const styles = StyleSheet.create({
     color: INK,
     fontSize: 24,
     lineHeight: 28,
-    fontWeight: 800,
+    fontFamily: nunito(800),
   },
   statsOf: {
     color: MUTED,
     fontSize: 12,
     lineHeight: 21,
-    fontWeight: 700,
+    fontFamily: nunito(700),
   },
   statsCaption: {
     color: INK,
     fontSize: 10.5,
-    fontWeight: 600,
+    fontFamily: nunito(600),
   },
   statsRow: {
     flexDirection: 'row',
@@ -491,7 +498,7 @@ const styles = StyleSheet.create({
   statsSmall: {
     color: INK,
     fontSize: 10.5,
-    fontWeight: 600,
+    fontFamily: nunito(600),
   },
   todayPill: {
     position: 'absolute',
@@ -507,7 +514,7 @@ const styles = StyleSheet.create({
   todayText: {
     color: '#FFFFFF',
     fontSize: 13,
-    fontWeight: 700,
+    fontFamily: nunito(700),
   },
   pressed: {
     opacity: 0.7,
@@ -539,18 +546,18 @@ const styles = StyleSheet.create({
   zoomDate: {
     color: MUTED,
     fontSize: 12,
-    fontWeight: 600,
+    fontFamily: nunito(600),
   },
   zoomTitle: {
     color: INK,
     fontSize: 20,
     lineHeight: 26,
-    fontWeight: 700,
+    fontFamily: nunito(700),
   },
   zoomClose: {
     color: INK,
     fontSize: 16,
-    fontWeight: 700,
+    fontFamily: nunito(700),
     padding: 4,
   },
   zoomFeedback: {
@@ -560,6 +567,7 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
   },
   zoomFeedbackText: {
+    fontFamily: nunito(400),
     flex: 1,
     color: INK,
     fontSize: 13,
@@ -575,11 +583,12 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   reactionEmoji: {
+    fontFamily: nunito(400),
     fontSize: 20,
   },
   reactionCount: {
     color: MUTED,
     fontSize: 11,
-    fontWeight: 700,
+    fontFamily: nunito(700),
   },
 });

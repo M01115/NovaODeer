@@ -6,7 +6,7 @@ import { Screen } from '@/components/screen';
 import { Smudge } from '@/components/smudge';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { Ink, nunito, Palette, Spacing } from '@/constants/theme';
 import { getHistory, getStreak } from '@/data/history';
 import {
   DEFAULT_OUTFIT,
@@ -110,8 +110,8 @@ export default function ProfileScreen() {
                 accessibilityRole="tab"
                 accessibilityState={{ selected: on }}
                 onPress={() => setSlot(sl)}
-                style={[styles.slot, { backgroundColor: on ? theme.text : theme.background }]}>
-                <Text style={[styles.slotText, { color: on ? theme.background : theme.text }]}>
+                style={[styles.slot, { backgroundColor: on ? Palette.yellow : theme.background, borderColor: on ? Ink.ink : 'transparent' }]}>
+                <Text style={[styles.slotText, { color: theme.text }]}>
                   {WARDROBE[sl].title}
                 </Text>
               </Pressable>
@@ -199,6 +199,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   settingsIcon: {
+    fontFamily: nunito(400),
     fontSize: 20,
   },
   hero: {
@@ -219,12 +220,13 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 22,
-    fontWeight: 800,
+    fontFamily: nunito(800),
     textAlign: 'center',
     minWidth: 80,
     padding: 0,
   },
   pencil: {
+    fontFamily: nunito(400),
     fontSize: 16,
   },
   statsRow: {
@@ -235,6 +237,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statValue: {
+    fontFamily: nunito(400),
     fontSize: 18,
     lineHeight: 24,
   },
@@ -253,6 +256,7 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   slot: {
+    borderWidth: 2,
     flex: 1,
     alignItems: 'center',
     paddingVertical: Spacing.two,
@@ -260,7 +264,7 @@ const styles = StyleSheet.create({
   },
   slotText: {
     fontSize: 13,
-    fontWeight: 700,
+    fontFamily: nunito(700),
   },
   grid: {
     flexDirection: 'row',
@@ -284,7 +288,7 @@ const styles = StyleSheet.create({
   },
   tileLabel: {
     fontSize: 12,
-    fontWeight: 700,
+    fontFamily: nunito(700),
   },
   lock: {
     position: 'absolute',
@@ -296,7 +300,7 @@ const styles = StyleSheet.create({
   },
   lockText: {
     fontSize: 10,
-    fontWeight: 800,
+    fontFamily: nunito(800),
   },
   pressed: {
     opacity: 0.7,

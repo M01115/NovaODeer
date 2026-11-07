@@ -8,9 +8,10 @@ import { Screen } from '@/components/screen';
 import { Smudge, type SmudgeMood } from '@/components/smudge';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Ink, Spacing } from '@/constants/theme';
+import { Ink, nunito, Spacing } from '@/constants/theme';
 import { DEFAULT_SECONDS, formatDuration, getPromptForDate } from '@/data/prompts';
 import { markPostedToday } from '@/data/today';
+import { ChunkyButton } from '@/components/chunky-button';
 import { useTheme } from '@/hooks/use-theme';
 
 type Phase = 'setup' | 'running' | 'paused' | 'done';
@@ -223,32 +224,11 @@ export default function SessionScreen() {
 }
 
 function PrimaryButton({ label, onPress }: { label: string; onPress: () => void }) {
-  const theme = useTheme();
-  return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.primary,
-        { backgroundColor: theme.text },
-        pressed && styles.pressedScale,
-      ]}>
-      <Text style={[styles.primaryText, { color: theme.background }]}>{label}</Text>
-    </Pressable>
-  );
+  return <ChunkyButton label={label} onPress={onPress} />;
 }
 
 function SecondaryButton({ label, onPress }: { label: string; onPress: () => void }) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={onPress}
-      style={({ pressed }) => pressed && styles.pressedScale}>
-      <ThemedView type="backgroundElement" style={styles.secondary}>
-        <ThemedText type="smallBold">{label}</ThemedText>
-      </ThemedView>
-    </Pressable>
-  );
+  return <ChunkyButton label={label} onPress={onPress} variant="white" size="medium" />;
 }
 
 const styles = StyleSheet.create({
@@ -264,6 +244,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   prompt: {
+    fontFamily: nunito(400),
     fontSize: 20,
     lineHeight: 26,
   },
@@ -289,7 +270,7 @@ const styles = StyleSheet.create({
   clock: {
     fontSize: 72,
     lineHeight: 80,
-    fontWeight: 800,
+    fontFamily: nunito(800),
     fontVariant: ['tabular-nums'],
     letterSpacing: -2,
   },
@@ -317,7 +298,7 @@ const styles = StyleSheet.create({
   },
   primaryText: {
     fontSize: 18,
-    fontWeight: 700,
+    fontFamily: nunito(700),
   },
   secondary: {
     paddingVertical: Spacing.three,

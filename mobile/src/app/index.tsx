@@ -17,10 +17,11 @@ import { scheduleOnRN } from 'react-native-worklets';
 
 import { ArchiveView } from '@/components/archive-view';
 import { FeedView } from '@/components/feed-view';
+import { ChunkyButton } from '@/components/chunky-button';
 import { Smudge } from '@/components/smudge';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { Ink, MaxContentWidth, nunito, Palette, Spacing } from '@/constants/theme';
 import { onArchiveRequest } from '@/data/archive-events';
 import { getHistory, getStreak } from '@/data/history';
 import { DEFAULT_SECONDS, formatDuration, sayDuration } from '@/data/prompts';
@@ -196,33 +197,21 @@ export default function HomeScreen() {
         </ThemedView>
       </View>
 
-      <ThemedView type="backgroundElement" style={styles.promptCard}>
+      <View style={styles.promptCard}>
         <View style={styles.promptMeta}>
-          <ThemedText type="small" themeColor="textSecondary">
+          <ThemedText type="small" style={styles.promptLabel}>
             Today’s prompt
           </ThemedText>
-          <ThemedView style={styles.timeBadge}>
+          <View style={styles.timeBadge}>
             <ThemedText type="smallBold">⏱ {formatDuration(seconds)}</ThemedText>
-          </ThemedView>
+          </View>
         </View>
         <ThemedText type="subtitle" style={styles.promptText}>
           {today?.prompt.text}
         </ThemedText>
-      </ThemedView>
+      </View>
 
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => router.push('/session')}
-        style={({ pressed }) => [
-          styles.primaryButton,
-          { backgroundColor: theme.text },
-          pressed && styles.primaryPressed,
-        ]}>
-        <Text style={[styles.plus, { color: theme.background }]}>+</Text>
-        <ThemedText style={[styles.primaryLabel, { color: theme.background }]}>
-          Snap my sketch
-        </ThemedText>
-      </Pressable>
+      <ChunkyButton label="Snap my sketch" icon="+" onPress={() => router.push('/session')} />
     </View>
   );
 
@@ -293,6 +282,8 @@ const styles = StyleSheet.create({
     top: 0,
   },
   profileInner: {
+    borderWidth: 2,
+    borderColor: Ink.ink,
     width: 44,
     height: 44,
     borderRadius: 14,
@@ -314,7 +305,7 @@ const styles = StyleSheet.create({
   archiveArrow: {
     fontSize: 18,
     lineHeight: 16,
-    fontWeight: 700,
+    fontFamily: nunito(700),
   },
   topBar: {
     flexDirection: 'row',
@@ -322,6 +313,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   pill: {
+    borderWidth: 2,
+    borderColor: Ink.ink,
     flexDirection: 'row',
     alignItems: 'center',
     height: 36,
@@ -344,6 +337,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   promptCard: {
+    backgroundColor: Palette.blue,
+    borderWidth: 2.5,
+    borderColor: Ink.ink,
     padding: Spacing.four,
     borderRadius: Spacing.four,
     gap: Spacing.two,
@@ -355,7 +351,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  promptLabel: {
+    color: Ink.ink,
+    opacity: 0.7,
+  },
   timeBadge: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: Ink.ink,
     paddingHorizontal: Spacing.two + 2,
     paddingVertical: 2,
     borderRadius: 10,
@@ -377,11 +380,11 @@ const styles = StyleSheet.create({
   plus: {
     fontSize: 26,
     lineHeight: 28,
-    fontWeight: 500,
+    fontFamily: nunito(500),
   },
   primaryLabel: {
     fontSize: 18,
-    fontWeight: 700,
+    fontFamily: nunito(700),
   },
   pressed: {
     opacity: 0.7,

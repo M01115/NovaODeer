@@ -3,8 +3,9 @@ import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ChunkyButton } from '@/components/chunky-button';
 import { Smudge } from '@/components/smudge';
-import { Colors, Ink } from '@/constants/theme';
+import { Colors, Ink, nunito, Palette } from '@/constants/theme';
 import { requestArchiveOpen } from '@/data/archive-events';
 import { getHistory, getStreak, toDateKey, type DayStatus } from '@/data/history';
 
@@ -14,13 +15,13 @@ const C = {
   ink: Ink.ink,
   buttonLip: '#000000',
   buttonText: '#FFFFFF',
-  card: Ink.ink,
-  cardMuted: '#33322F',
-  labelMuted: '#8A877F',
+  card: Palette.blue,
+  cardMuted: 'rgba(255, 255, 255, 0.35)',
+  labelMuted: 'rgba(255, 255, 255, 0.85)',
   done: '#FFFFFF',
   ice: '#BFE3F5',
   check: Ink.ink,
-  today: Ink.red,
+  today: Palette.yellow,
 };
 
 const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
@@ -84,16 +85,7 @@ export default function StreakScreen() {
 
       <View style={{ flex: 87 }} />
 
-      <Pressable accessibilityRole="button" onPress={startSketch} style={styles.buttonWrap}>
-        {({ pressed }) => (
-          <>
-            <View style={styles.buttonLip} />
-            <View style={[styles.button, { top: pressed ? 4 : 0 }]}>
-              <Text style={styles.buttonText}>✏️  START TODAY’S SKETCH</Text>
-            </View>
-          </>
-        )}
-      </Pressable>
+      <ChunkyButton label="Start today’s sketch" icon="✏️" onPress={startSketch} />
 
       <View style={{ flex: 20 }} />
 
@@ -133,6 +125,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   flame: {
+    fontFamily: nunito(400),
     position: 'absolute',
     left: -22,
     top: -8,
@@ -143,14 +136,14 @@ const styles = StyleSheet.create({
     color: C.ink,
     fontSize: 116,
     lineHeight: 120,
-    fontWeight: 900,
+    fontFamily: nunito(900),
     textAlign: 'center',
   },
   caption: {
     color: C.ink,
     fontSize: 27,
     lineHeight: 34,
-    fontWeight: 800,
+    fontFamily: nunito(800),
     textAlign: 'center',
   },
   card: {
@@ -170,7 +163,7 @@ const styles = StyleSheet.create({
     color: C.labelMuted,
     fontSize: 15,
     lineHeight: 18,
-    fontWeight: 700,
+    fontFamily: nunito(700),
   },
   dayLabelToday: {
     color: C.today,
@@ -190,7 +183,7 @@ const styles = StyleSheet.create({
   check: {
     color: C.check,
     fontSize: 14,
-    fontWeight: 900,
+    fontFamily: nunito(900),
   },
   buttonWrap: {
     height: 47,
@@ -217,14 +210,14 @@ const styles = StyleSheet.create({
   buttonText: {
     color: C.buttonText,
     fontSize: 15,
-    fontWeight: 800,
+    fontFamily: nunito(800),
     letterSpacing: 1,
   },
   continue: {
     color: C.ink,
     fontSize: 16,
     lineHeight: 30,
-    fontWeight: 800,
+    fontFamily: nunito(800),
     letterSpacing: 1.5,
     textAlign: 'center',
   },

@@ -7,14 +7,15 @@ import '@/global.css';
 
 import { Platform } from 'react-native';
 
-// Paper-and-ink palette: warm off-white paper, black ink, pencil greys.
+// Playful palette (after the team's "Explicai" reference): warm cream, white cards,
+// bright yellow as the main colour, orange / sky blue / pink accents, black ink.
 export const Colors = {
   light: {
     text: '#161616',
-    background: '#F6F5F1',
-    backgroundElement: '#ECEAE4',
-    backgroundSelected: '#DCD9D1',
-    textSecondary: '#8A877F',
+    background: '#F6EFE4',
+    backgroundElement: '#FFFFFF',
+    backgroundSelected: '#EFE5D6',
+    textSecondary: '#8C8173',
   },
   // Unused while the app is light-only (see hooks/use-color-scheme.ts).
   dark: {
@@ -26,16 +27,44 @@ export const Colors = {
   },
 } as const;
 
-/** Ink accents shared by the path, popovers and buttons. */
+/** Brand colours, shared by buttons, cards, the archive and the streak screens. */
+export const Palette = {
+  yellow: '#FFD21F',
+  yellowDeep: '#F5B800',
+  orange: '#FF5A1F',
+  blue: '#18B4F0',
+  pink: '#FFA9D4',
+  cream: '#F6EFE4',
+  creamDeep: '#EFE5D6',
+};
+
+/** Ink accents (outlines, text, lines). */
 export const Ink = {
   ink: '#161616',
   inkLip: '#000000',
-  pencil: '#B9B5AC',
+  pencil: '#C9BFB0',
   paper: '#FFFFFF',
-  paperLip: '#D4D0C6',
-  /** The one spot colour, used sparingly (streak flame, today). */
-  red: '#E5483B',
+  paperLip: '#DDD3C4',
+  /** The spot colour for urgency / today (overtime, today's dot). */
+  red: Palette.orange,
 };
+
+/**
+ * Nunito, for all text. Custom fonts need one font file per weight, so use
+ * `fontFamily: nunito(700)` instead of `fontWeight: 700`. Loaded in app/_layout.tsx.
+ */
+const NUNITO = {
+  400: 'Nunito_400Regular',
+  500: 'Nunito_500Medium',
+  600: 'Nunito_600SemiBold',
+  700: 'Nunito_700Bold',
+  800: 'Nunito_800ExtraBold',
+  900: 'Nunito_900Black',
+} as const;
+
+export function nunito(weight: keyof typeof NUNITO) {
+  return NUNITO[weight];
+}
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 

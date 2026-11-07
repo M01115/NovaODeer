@@ -7,7 +7,7 @@ import { SketchThumb } from '@/components/sketch-thumb';
 import { Smudge } from '@/components/smudge';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { nunito, Spacing } from '@/constants/theme';
 import { getPromptForDate } from '@/data/prompts';
 import { REACTIONS, type Reaction } from '@/data/reactions';
 import { SAMPLE_SKETCHES } from '@/data/sketches';
@@ -235,6 +235,7 @@ const styles = StyleSheet.create({
     gap: Spacing.four,
   },
   promptTitle: {
+    fontFamily: nunito(400),
     fontSize: 20,
     lineHeight: 26,
   },
@@ -298,7 +299,7 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontSize: 11,
-    fontWeight: 800,
+    fontFamily: nunito(800),
     color: '#161616',
   },
   locked: {
@@ -316,7 +317,7 @@ const styles = StyleSheet.create({
   },
   ctaText: {
     fontSize: 16,
-    fontWeight: 700,
+    fontFamily: nunito(700),
   },
   pressedScale: {
     transform: [{ scale: 0.97 }],
@@ -358,11 +359,12 @@ const styles = StyleSheet.create({
     minWidth: 40,
   },
   reactionEmoji: {
+    fontFamily: nunito(400),
     fontSize: 20,
   },
   reactionCount: {
     fontSize: 11,
-    fontWeight: 700,
+    fontFamily: nunito(700),
   },
   myReactions: {
     // Leaves the bottom-right corner free for Smudge, who sits over it.
@@ -371,6 +373,6 @@ const styles = StyleSheet.create({
   reactionCountText: {
     fontSize: 11,
     lineHeight: 14,
-    fontWeight: 700,
+    fontFamily: nunito(700),
   },
 });
