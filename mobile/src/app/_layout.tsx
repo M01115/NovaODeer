@@ -39,7 +39,7 @@ export default function RootLayout() {
         <PhoneFrame>
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />
-            {/* Profile and Smudge's wardrobe, opened from the top-right of Home. */}
+            {/* Profile and Puff's wardrobe, opened from the top-right of Home. */}
             <Stack.Screen name="profile" options={{ presentation: 'modal' }} />
             {/* Sketch session (timer), opened from "+ Snap my sketch". */}
             <Stack.Screen name="session" options={{ presentation: 'modal' }} />

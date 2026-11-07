@@ -55,7 +55,7 @@ export const WARDROBE: { [S in Slot]: { title: string; items: Item<Outfit[S]>[] 
 };
 
 let outfit: Outfit = DEFAULT_OUTFIT;
-let name = 'Smudge';
+let name = 'Puff';
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
@@ -86,6 +86,6 @@ export function useMascotName() {
   return useSyncExternalStore(
     subscribe,
     () => name,
-    () => 'Smudge'
+    () => 'Puff'
   );
 }

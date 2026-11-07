@@ -147,7 +147,7 @@ export function PuffIntro() {
         </View>
         {/* The name's space is always there; it only fades, so Puff never jumps. */}
         <Animated.View style={[styles.name, nameStyle]}>
-          <PuffText size={44}>A Sketch a Day</PuffText>
+          <PuffText size={48}>Puffolio</PuffText>
           <PuffText size={18} color="#83868D">
             one sketch a day, with Puff
           </PuffText>

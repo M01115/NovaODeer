@@ -40,7 +40,7 @@ const HINT_DISTANCE = 70;
 
 /**
  * The one main screen. Before today's sketch is posted it shows the prompt; after, it
- * becomes the feed (your sketch, Smudge's feedback, friends' sketches). Smudge is always on
+ * becomes the feed (your sketch, Puff's feedback, friends' sketches). Puff is always on
  * screen. Profile opens from the top-right corner.
  *
  * Home is all about today's prompt. The sketch archive sits directly above it, in the same
@@ -185,7 +185,7 @@ export default function HomeScreen() {
           </Animated.View>
         </Pressable>
 
-        {/* Profile, top right: Smudge's face in his current outfit. */}
+        {/* Profile, top right: Puff's face in his current outfit. */}
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Profile"
@@ -199,7 +199,7 @@ export default function HomeScreen() {
     </View>
   );
 
-  // Before posting: today's prompt, with Smudge cheering you on.
+  // Before posting: today's prompt, with Puff cheering you on.
   const promptBody = (
     <View style={[styles.promptBody, { paddingBottom: insets.bottom + Spacing.four }]}>
       <View style={styles.mascotArea}>

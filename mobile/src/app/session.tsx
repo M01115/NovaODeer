@@ -42,7 +42,7 @@ function formatClock(totalSeconds: number) {
 }
 
 /**
- * Sketch session, opened from "+ Snap my sketch": pick a time, sketch while Smudge
+ * Sketch session, opened from "+ Snap my sketch": pick a time, sketch while Puff
  * watches, keep going past the timer if you like, then scan the paper.
  */
 export default function SessionScreen() {

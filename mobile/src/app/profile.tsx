@@ -25,9 +25,9 @@ const SLOTS: Slot[] = ['hat', 'eyes', 'hold'];
 const COLUMNS = 3;
 
 /**
- * Profile (opened from the top-right of Home): Smudge in the middle, wearing whatever you've picked, your stats, and a
+ * Profile (opened from the top-right of Home): Puff in the middle, wearing whatever you've picked, your stats, and a
  * wardrobe to dress him up. Some items unlock with longer streaks (Duolingo/Finch style).
- * The look shows on Smudge everywhere in the app.
+ * The look shows on Puff everywhere in the app.
  */
 export default function ProfileScreen() {
   const theme = useTheme();
@@ -126,7 +126,7 @@ export default function ProfileScreen() {
             WARDROBE[slot].items.map((item) => {
               const locked = stats.streak < item.unlockStreak;
               const selected = outfit[slot] === item.id;
-              // Preview: Smudge in today's look, with this one item swapped in.
+              // Preview: Puff in today's look, with this one item swapped in.
               const preview = { ...outfit, [slot]: item.id } as Outfit;
               return (
                 <Pressable

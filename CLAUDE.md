@@ -1,4 +1,4 @@
-# A Sketch a Day — project brief
+# Puffolio — project brief
 
 Read this before working on the code. It describes what we're building and the rules the product must follow.
 
@@ -65,12 +65,12 @@ Select medium → Get prompt → Sketch → Submit → Feedback → Feed / Profi
 - **iPhone first.** v1 is designed and built for iPhone only. Don't spend time on iPad layouts until the iPhone app works.
 
 ## Screens (current design, from team notes)
-- **Home (the one main screen, no tab bar):** before today's sketch is posted it shows the prompt (animated Smudge, prompt, black "+ Snap my sketch"); after posting it becomes the feed (your sketch + friends' reactions, Smudge's feedback, friends' sketches 2×2). Smudge is always on screen. Top edge: "Sketch archive" hint (pull down or tap). Top-left: streak; top-right: Profile button (Smudge's face). No date. No scroll bars anywhere (phone app).
-- **Profile (modal from Home's top-right):** Smudge in the middle in his current outfit, renamable name, stats, and a wardrobe (hats, glasses, neck, pencil colour; some unlock with streaks). The outfit shows on Smudge everywhere.
+- **Home (the one main screen, no tab bar):** before today's sketch is posted it shows the prompt (animated Puff, prompt, black "+ Snap my sketch"); after posting it becomes the feed (your sketch + friends' reactions, Puff's feedback, friends' sketches 2×2). Puff is always on screen. Top edge: "Sketch archive" hint (pull down or tap). Top-left: streak; top-right: Profile button (Puff's face). No date. No scroll bars anywhere (phone app).
+- **Profile (modal from Home's top-right):** Puff in the middle in his current outfit, renamable name, stats, and a wardrobe (hats, glasses, neck, pencil colour; some unlock with streaks). The outfit shows on Puff everywhere.
 - **After posting:** streak completion screen (bar fills, flame bursts, streak ticks up), then Home shows the feed.
-- **During sketch (session/timer):** pick 2/5/10 min, countdown, Smudge's expression adapts to time left (focus → hurry → proud), haptic nudges at 1 min left and time up (sound later), keeps counting extra time after the timer ends.
+- **During sketch (session/timer):** pick 2/5/10 min, countdown, Puff's expression adapts to time left (focus → hurry → proud), haptic nudges at 1 min left and time up (sound later), keeps counting extra time after the timer ends.
 - **After sketch:** scan the paper (main) or photo library → AI feedback → streak, medium/time spent, your drawing, friends' drawings, positive emoji reactions.
-- **Past gallery (archive):** lives directly above Home; pulling down drags it in continuously (1:1 with the finger, springs to finish). Past sketches sit along a Duolingo-style S path you scroll (oldest top, newest bottom, newer cards always on top of older). The card nearest the screen middle grows (hover) — tap it to enlarge with reactions. Each week's stats (days sketched, minutes, freezes) sit in the S curve's empty pocket with Smudge. Sample sketches: `mobile/assets/sketches` (see src/data/sketches.ts). Later: timeframe choice (week/month/year/max).
+- **Past gallery (archive):** lives directly above Home; pulling down drags it in continuously (1:1 with the finger, springs to finish). Past sketches sit along a Duolingo-style S path you scroll (oldest top, newest bottom, newer cards always on top of older). The card nearest the screen middle grows (hover) — tap it to enlarge with reactions. Each week's stats (days sketched, minutes, freezes) sit in the S curve's empty pocket with Puff. Sample sketches: `mobile/assets/sketches` (see src/data/sketches.ts). Later: timeframe choice (week/month/year/max).
 - **Feature ideas:** draw together with friends; "finish within 2 minutes" modes, speed sketch, sketch-a-thon (to reduce fatigue); streak freezes to reduce friction.
 
 ## Most important for the demo
@@ -97,4 +97,5 @@ Select medium → Get prompt → Sketch → Submit → Feedback → Feed / Profi
 - **AI model for feedback:** _TBD_
 - **Accounts & friends:** how people sign in and add friends: _TBD_
 - **Prompts:** one shared prompt for everyone, or different prompts per medium; hand-written vs AI-generated: _TBD_
-- **Mascot:** character and name: _TBD_
+- **App name:** Puffolio.
+- **Mascot:** Puff, a pufferfish (Morris's rig). In code the component is still called `Smudge` (`components/smudge.tsx`).

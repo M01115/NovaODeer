@@ -26,7 +26,7 @@ import {
  * its own (body, squash, puff, spikes, fin, tail, beret, brush, glasses, each eye's lids
  * and pupil, mouth), so one drawing gives all 18 expressions in smudge-poses.ts.
  * Animations are Reanimated CSS animations on the UI thread. The component keeps its old
- * name (Smudge) so every screen keeps working.
+ * code name (Smudge) so every screen keeps working.
  */
 export type SmudgeMood = PuffMood;
 

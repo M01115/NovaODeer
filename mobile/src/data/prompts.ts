@@ -63,7 +63,7 @@ export function formatDuration(seconds: number) {
   return seconds < 60 ? `${seconds} sec` : `${Math.round(seconds / 60)} min`;
 }
 
-/** "Thirty seconds", "Two minutes", "Five minutes" (for Smudge's lines). */
+/** "Thirty seconds", "Two minutes", "Five minutes" (for Puff's lines). */
 export function sayDuration(seconds: number) {
   if (seconds === 30) return 'Thirty seconds';
   if (seconds === 120) return 'Two minutes';

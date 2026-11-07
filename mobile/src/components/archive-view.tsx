@@ -74,7 +74,7 @@ type Pocket = {
  *
  * The sketch archive, laid out like Duolingo's path: sketches sit along a winding S path
  * you scroll through (oldest at the top, newest at the bottom), swinging almost edge to
- * edge every ${WIGGLE} cards. Each week ends with a square of that week's stats (with Smudge)
+ * edge every ${WIGGLE} cards. Each week ends with a square of that week's stats (with Puff)
  * in its own slot on the path, so sketches never cover it. The card nearest the middle of the
  * screen grows (like hover) and nudges its neighbours apart, stats squares included; tap it to
  * pop it up.
@@ -286,7 +286,7 @@ export function ArchiveView({ onClose }: { onClose: () => void }) {
         <Text style={styles.todayText}>︿  Back to today</Text>
       </Pressable>
 
-      {zoomed && <ZoomedSketch day={zoomed} onClose={() => setZoomed(null)} />}
+      {zoomed && <ZoomedSketch day={zoomed} screenW={width} onClose={() => setZoomed(null)} />}
     </View>
   );
 }
@@ -362,7 +362,7 @@ function PathCard({
 }
 
 /**
- * A week's stats as a square, with Smudge sitting on it. It has its own slot after the
+ * A week's stats as a square, with Puff sitting on it. It has its own slot after the
  * week's last sketch and steps aside with its neighbours when a card grows, so it's never
  * covered.
  */
@@ -422,8 +422,11 @@ function WeekPocket({
   );
 }
 
-/** The middle card, popped up and enlarged, with Smudge's note and friends' reactions. */
-function ZoomedSketch({ day, onClose }: { day: Day; onClose: () => void }) {
+/** The middle card, popped up and enlarged, with Puff's note and friends' reactions. */
+function ZoomedSketch({ day, screenW, onClose }: { day: Day; screenW: number; onClose: () => void }) {
+  // A fixed width in points (not a %): while the pop-in animation runs on the web the card is
+  // briefly laid out differently, and a % width made it change size when the animation ended.
+  const cardW = Math.min(340, Math.round(screenW * 0.92));
   // Placeholder counts until reactions come from the backend.
   const counts = [12, 7, 5, 3, 2, 1];
   const friends = getFriendSketches(day.prompt.id);
@@ -431,7 +434,7 @@ function ZoomedSketch({ day, onClose }: { day: Day; onClose: () => void }) {
   return (
     <Animated.View exiting={FadeOut.duration(150)} style={styles.zoomLayer}>
       <Pressable accessibilityLabel="Close" style={styles.backdrop} onPress={onClose} />
-      <Animated.View entering={popIn} style={styles.zoomCard}>
+      <Animated.View entering={popIn} style={[styles.zoomCard, { width: cardW }]}>
         <View style={styles.zoomHeader}>
           <View style={{ flex: 1 }}>
             <Text style={styles.zoomDate}>{formatShortDate(day.date)}</Text>
@@ -442,7 +445,7 @@ function ZoomedSketch({ day, onClose }: { day: Day; onClose: () => void }) {
           </Pressable>
         </View>
 
-        <SketchThumb size={300} image={day.image} emoji={day.prompt.emoji} shape="card" />
+        <SketchThumb size={cardW - 36} image={day.image} emoji={day.prompt.emoji} shape="card" />
 
         {day.feedback && (
           <View style={styles.zoomFeedback}>
@@ -624,8 +627,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(22, 22, 22, 0.35)',
   },
   zoomCard: {
-    width: 340,
-    maxWidth: '92%',
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
     padding: 18,

@@ -42,7 +42,7 @@ function formatTime(seconds: number) {
 
 /**
  * The feed, shown on Home once today's sketch is posted (before that, Home shows the
- * prompt). Your sketch with friends' reactions, Smudge's feedback beside him, then your
+ * prompt). Your sketch with friends' reactions, Puff's feedback beside him, then your
  * friends' sketches in a 2×2 grid. Friends only: sketches are never shown to strangers.
  * Reactions are a fixed set of positive emojis; no text comments.
  */
@@ -51,10 +51,11 @@ export function FeedView({ posted }: { posted: PostedSketch }) {
   const prompt = useMemo(() => getPromptForDate(), []);
   const [width, setWidth] = useState(0);
   const [open, setOpen] = useState<Friend | null>(null);
+  const [screenW, setScreenW] = useState(0);
   const friends = useMemo(() => friendsFor(prompt.id), [prompt.id]);
 
   return (
-    <View style={styles.root}>
+    <View style={styles.root} onLayout={(e: LayoutChangeEvent) => setScreenW(e.nativeEvent.layout.width)}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + Spacing.four }]}>
@@ -80,7 +81,7 @@ export function FeedView({ posted }: { posted: PostedSketch }) {
         )}
       </ScrollView>
 
-      {open && <FriendSketch friend={open} onClose={() => setOpen(null)} />}
+      {open && <FriendSketch friend={open} screenW={screenW} onClose={() => setOpen(null)} />}
     </View>
   );
 }
@@ -134,7 +135,7 @@ function PostedFeed({
         </View>
       </ThemedView>
 
-      {/* Smudge's feedback, with Smudge peeking over the sketch's bottom-right corner */}
+      {/* Puff's feedback, with Puff peeking over the sketch's bottom-right corner */}
       <View style={styles.feedbackRow}>
         <ThemedView type="backgroundElement" style={styles.feedbackBox}>
           {/* Full text keeps the box's size; the typed part shows on top of it. */}
@@ -186,7 +187,9 @@ function PostedFeed({
 
 
 /** A friend's sketch, popped up, with positive-emoji reactions you can toggle. */
-function FriendSketch({ friend, onClose }: { friend: Friend; onClose: () => void }) {
+function FriendSketch({ friend, screenW, onClose }: { friend: Friend; screenW: number; onClose: () => void }) {
+  // Fixed width in points (not a %), so the card doesn't change size when its pop-in ends.
+  const cardW = Math.min(330, Math.round(screenW * 0.92));
   const theme = useTheme();
   // Your own reactions (placeholder until the backend).
   const [mine, setMine] = useState<Set<Reaction>>(new Set());
@@ -201,7 +204,7 @@ function FriendSketch({ friend, onClose }: { friend: Friend; onClose: () => void
   return (
     <Animated.View exiting={FadeOut.duration(150)} style={styles.layer}>
       <Pressable accessibilityLabel="Close" style={styles.backdrop} onPress={onClose} />
-      <Animated.View entering={popIn} style={[styles.popCard, { backgroundColor: theme.background }]}>
+      <Animated.View entering={popIn} style={[styles.popCard, { width: cardW, backgroundColor: theme.background }]}>
         <View style={styles.popHeader}>
           <View style={[styles.avatar, { backgroundColor: friend.color }]}>
             <Text style={styles.avatarText}>{friend.initial}</Text>
@@ -213,7 +216,7 @@ function FriendSketch({ friend, onClose }: { friend: Friend; onClose: () => void
             <ThemedText type="smallBold">✕</ThemedText>
           </Pressable>
         </View>
-        <SketchThumb size={290} image={friend.image} emoji="✏️" shape="card" />
+        <SketchThumb size={cardW - 36} image={friend.image} emoji="✏️" shape="card" />
         <View style={styles.reactions}>
           {REACTIONS.map((r, i) => {
             const on = mine.has(r);
@@ -332,7 +335,7 @@ const styles = StyleSheet.create({
   feedbackRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    // Smudge rises up over the sketch card's bottom-right corner.
+    // Puff rises up over the sketch card's bottom-right corner.
     marginTop: -Spacing.six,
     gap: Spacing.two,
   },
@@ -409,8 +412,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(22, 22, 22, 0.35)',
   },
   popCard: {
-    width: 330,
-    maxWidth: '92%',
     borderRadius: 24,
     padding: 18,
     alignItems: 'center',

@@ -24,7 +24,7 @@ export type Day = {
   status: DayStatus;
   /** The sketch image (sample sketches for now; uploads later). Falls back to the prompt emoji. */
   image?: number;
-  /** Smudge's feedback on the sketch. */
+  /** Puff's feedback on the sketch. */
   feedback?: string;
   /** Minutes spent sketching (from the timer). */
   minutes?: number;
@@ -53,7 +53,7 @@ const MOCK_PAST: {
   feedback?: string;
   minutes?: number;
 }[] = [
-  { status: 'done', feedback: 'Day one! Smudge is so proud you showed up.' },
+  { status: 'done', feedback: 'Day one! Puff is so proud you showed up.' },
   { status: 'done', feedback: 'Nice round ellipse. Those are tricky!' },
   { status: 'done', feedback: 'Clean and simple. That is exactly the point.' },
   { status: 'done', minutes: 3, feedback: 'A brave first sketch! Every streak starts exactly like this.' },
@@ -61,7 +61,7 @@ const MOCK_PAST: {
   { status: 'missed' },
   { status: 'done', minutes: 5, feedback: 'Look at that confident outline. Love it.' },
   { status: 'done', minutes: 2, feedback: 'Quick and expressive. Speed sketches suit you!' },
-  { status: 'done', minutes: 6, feedback: 'The proportions here are spot on. Smudge approves.' },
+  { status: 'done', minutes: 6, feedback: 'The proportions here are spot on. Puff approves.' },
   { status: 'done', minutes: 4, feedback: 'Great use of light and shadow on this one.' },
   { status: 'missed' },
   { status: 'done', minutes: 5, feedback: 'You found a fun angle. Very playful.' },
@@ -71,7 +71,7 @@ const MOCK_PAST: {
   { status: 'done', minutes: 6, feedback: 'That shading on the left side gives it real weight. Nice!' },
   { status: 'missed' },
   { status: 'done', minutes: 5, feedback: 'Bold composition! Try a lighter first pass next time — it’ll pop.' },
-  { status: 'done', minutes: 3, feedback: 'You nailed the proportions. Smudge is impressed.' },
+  { status: 'done', minutes: 3, feedback: 'You nailed the proportions. Puff is impressed.' },
   { status: 'frozen' },
   { status: 'done', minutes: 7, feedback: 'Such a fun angle! Most people draw this straight on.' },
   { status: 'done', minutes: 5, feedback: 'Your lines are getting steadier every day. Keep going!' },

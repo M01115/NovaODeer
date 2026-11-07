@@ -4,14 +4,14 @@ import { useSyncExternalStore } from 'react';
  * Today's posted sketch. The friends feed stays locked until there is one.
  * In-memory for now (resets when the app restarts); the backend will own this later.
  * Whoever builds scanning/upload should call `markPostedToday()` once the sketch is saved,
- * passing the image and Smudge's feedback when they exist.
+ * passing the image and Puff's feedback when they exist.
  */
 export type PostedSketch = {
   /** Seconds spent sketching (from the timer). */
   seconds: number;
   /** The sketch image: a file/data URI (drawn in the app) or a bundled module. */
   image?: number | string;
-  /** Smudge's feedback on the sketch (from the AI). */
+  /** Puff's feedback on the sketch (from the AI). */
   feedback?: string;
 };
 
