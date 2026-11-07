@@ -5,8 +5,8 @@ export const PAPER = '#FFFFFF';
 
 type Props = {
   size: number;
-  /** A bundled image (the result of require()). */
-  image?: number;
+  /** A bundled image (the result of require()) or an image URI (e.g. a sketch drawn in the app). */
+  image?: number | string;
   /** Shown when there's no image yet (mock data). */
   emoji: string;
   /** Circle on the path, rounded square on detail screens. */
@@ -22,7 +22,7 @@ export function SketchThumb({ size, image, emoji, shape = 'circle' }: Props) {
       {image ? (
         // Whole drawing visible: pencil sketches have white paper around them anyway.
         <Image
-          source={image}
+          source={typeof image === 'string' ? { uri: image } : image}
           style={[StyleSheet.absoluteFill, { margin: size * 0.04 }]}
           contentFit="contain"
         />

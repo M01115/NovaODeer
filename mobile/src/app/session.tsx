@@ -13,6 +13,7 @@ import { DEFAULT_SECONDS, formatDuration, getPromptForDate } from '@/data/prompt
 import { markPostedToday } from '@/data/today';
 import { ChunkyButton } from '@/components/chunky-button';
 import { useTheme } from '@/hooks/use-theme';
+import { playSound, type SoundId } from '@/lib/sounds';
 
 type Phase = 'setup' | 'running' | 'paused' | 'done';
 
@@ -80,8 +81,32 @@ export default function SessionScreen() {
     }
   }, [phase, remaining, total]);
 
+  // Sound cues (Morris's sound kit): sonar ping at 1:00, double ping at 0:30, water-drop
+  // ticks for the last 10 seconds, a friendly bell at 0:00. In overtime Puff creaks every
+  // 6 s (faster as he swells), inflates into the pop at +1:00, then pulls himself together.
+  const cue = useRef<{ second: number | null }>({ second: null });
+  useEffect(() => {
+    if (phase !== 'running') return;
+    const left = Math.ceil(remaining);
+    if (cue.current.second === left) return;
+    const prev = cue.current.second;
+    cue.current.second = left;
+    if (prev === null) return; // no cue on the first tick
+    const over = -left;
+    if (left === 60 && total > 60) playSound('one-minute');
+    else if (left === 30 && total > 30) playSound('thirty-sec');
+    else if (left <= 10 && left >= 4) playSound('tick');
+    else if (left <= 3 && left >= 1) playSound('tick-high');
+    else if (left === 0) playSound('time-up');
+    else if (over > 0 && over < 57 && over % 6 === 0) playSound('overtime-creak', { rate: 1 + 0.6 * (over / 60) });
+    else if (over === 57) playSound('inflate');
+    else if (over === 60) playSound('pop');
+    else if (over === 63) playSound('reform');
+  }, [phase, remaining, total]);
+
   const start = () => {
     nudged.current = { minute: false, up: false };
+    cue.current.second = null;
     setElapsedBefore(0);
     setRunStartedAt(Date.now());
     setNow(Date.now());
@@ -103,21 +128,52 @@ export default function SessionScreen() {
     setPhase('done');
   };
 
-  let mood: SmudgeMood = 'happy';
+  // Puff's mood follows the clock (Morris's countdown draft): calm, then looking closely
+  // at a minute left, nervous at 30s, flapping in the last 10s. In overtime he slowly
+  // puffs up (and gets playfully huffy at +0:30); after a minute he pops, pulls himself back
+  // together and waits.
+  let mood: SmudgeMood = 'neutral';
+  let inflate = 0;
   let line =
     total <= 30
       ? 'A quick one! Thirty seconds, just the big shapes.'
       : `Ready when you are. ${formatDuration(total)}, any paper and a pencil!`;
-  if (phase === 'running' || phase === 'paused') {
-    if (overtime) {
-      mood = 'proud';
+  if (phase === 'paused') {
+    mood = 'sleepy';
+    line = 'Taking a breather. I’ll wait.';
+  } else if (phase === 'running') {
+    const over = elapsed - total;
+    if (overtime && over < 30) {
+      mood = 'overtime';
+      inflate = over / 60;
       line = 'Time’s up — but keep going if you’re in the zone!';
-    } else if (remaining <= total * 0.25) {
-      mood = 'hurry';
-      line = 'Almost there! Don’t worry about the details.';
+    } else if (overtime && over < 45) {
+      // Playful fake outrage: puffed up, red-faced, steaming. Never a real scolding.
+      mood = 'angry';
+      line = 'Hmph! I’m puffing up over here… (take your time!)';
+    } else if (overtime && over < 60) {
+      mood = 'overtime';
+      inflate = over / 60;
+      line = 'Still going? I’m so excited I might pop!';
+    } else if (overtime && over < 63.8) {
+      mood = 'explode';
+      line = 'Whoops, I got too excited!';
+    } else if (overtime && over < 72) {
+      mood = 'awkward';
+      line = 'Okay, okay. Snap it when you’re ready.';
+    } else if (overtime) {
+      line = 'Snap it whenever you’re ready.';
+    } else if (remaining > 60) {
+      line = 'Ooh, I can hear the pencil…';
+    } else if (remaining > 30) {
+      mood = 'squint';
+      line = total > 60 ? 'One minute left!' : 'Ooh, I can hear the pencil…';
+    } else if (remaining > 10) {
+      mood = total > 30 ? 'nervous' : 'squint';
+      line = total > 30 ? '30 seconds — big shapes first!' : 'Ooh, I can hear the pencil…';
     } else {
-      mood = 'focus';
-      line = phase === 'paused' ? 'Taking a breather. I’ll wait.' : 'Ooh, I can hear the pencil…';
+      mood = 'flapping';
+      line = 'Almost there! Don’t worry about the details.';
     }
   }
   if (phase === 'done') {
@@ -142,7 +198,7 @@ export default function SessionScreen() {
       </View>
 
       <View style={styles.mascotArea}>
-        <Smudge size={130} mood={mood} animated={phase !== 'done'} />
+        <Smudge size={130} mood={mood} inflate={inflate} animated />
         <ThemedView type="backgroundElement" style={styles.bubble}>
           <ThemedText type="small" style={styles.center}>
             {line}
@@ -191,7 +247,12 @@ export default function SessionScreen() {
 
       {/* Actions */}
       <View style={styles.actions}>
-        {phase === 'setup' && <PrimaryButton label="Start sketching" onPress={start} />}
+        {phase === 'setup' && (
+          <>
+            <PrimaryButton label="Start sketching" onPress={start} sound="session-start" />
+            <SecondaryButton label="✏️  Draw on my phone" onPress={() => router.replace('/draw')} />
+          </>
+        )}
 
         {(phase === 'running' || phase === 'paused') && (
           <>
@@ -205,8 +266,8 @@ export default function SessionScreen() {
 
         {phase === 'done' && (
           <>
-            <PrimaryButton label="📷  Scan my sketch" onPress={() => postSketch(elapsed)} />
-            <SecondaryButton label="Choose from photos" onPress={() => postSketch(elapsed)} />
+            <PrimaryButton label="📷  Scan my sketch" onPress={() => postSketch(elapsed)} sound="snap" />
+            <SecondaryButton label="Choose from photos" onPress={() => postSketch(elapsed)} sound="snap" />
             <Pressable
               accessibilityRole="button"
               onPress={() => router.back()}
@@ -223,12 +284,14 @@ export default function SessionScreen() {
   );
 }
 
-function PrimaryButton({ label, onPress }: { label: string; onPress: () => void }) {
-  return <ChunkyButton label={label} onPress={onPress} />;
+type ButtonProps = { label: string; onPress: () => void; sound?: SoundId };
+
+function PrimaryButton({ label, onPress, sound }: ButtonProps) {
+  return <ChunkyButton label={label} onPress={onPress} sound={sound} />;
 }
 
-function SecondaryButton({ label, onPress }: { label: string; onPress: () => void }) {
-  return <ChunkyButton label={label} onPress={onPress} variant="white" size="medium" />;
+function SecondaryButton({ label, onPress, sound }: ButtonProps) {
+  return <ChunkyButton label={label} onPress={onPress} variant="white" size="medium" sound={sound} />;
 }
 
 const styles = StyleSheet.create({

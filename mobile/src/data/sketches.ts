@@ -2,10 +2,14 @@
  * Sample timed pencil sketches (generated in the team's scanned-pencil style), used as
  * past sketches in the archive until real uploads exist. Images are 640px-wide JPEGs in
  * assets/sketches; originals: Documents/Codex/2026-11-07/gene/outputs/timed-pencil-sketches.
+ * Four are real hand sketches from the team's scan (扫描文稿.pdf): 05 water bottle,
+ * 07 navigation device, 16 canopy bench and 18 lookout shelter.
  */
 export type SampleSketch = {
   /** Short prompt shown on cards. */
   title: string;
+  /** The prompt's id, when friends' sketches of it exist (data/friends.ts). */
+  promptId?: string;
   /** The full drawing brief. */
   brief: string;
   emoji: string;
@@ -28,7 +32,6 @@ export const SAMPLE_SKETCHES: SampleSketch[] = [
   { title: 'A collapsible lantern', emoji: '🏮', minutes: 2, brief: 'Draw a collapsible lantern with elliptical rims, three accordion folds, and a curved handle.', image: require('@/assets/sketches/10-collapsible-lantern.jpg') },
   { title: 'A desk lamp', emoji: '💡', minutes: 2, brief: 'Sketch a desk lamp with a circular base, two jointed arms, and a cone-shaped shade.', image: require('@/assets/sketches/11-desk-lamp.jpg') },
   { title: 'A folding table', emoji: '🪵', minutes: 2, brief: 'Draw a folding table in perspective, showing its split tabletop and crossed supports.', image: require('@/assets/sketches/12-folding-table.jpg') },
-  { title: 'A portable radio', emoji: '📻', minutes: 2, brief: 'Sketch a portable radio with a carrying handle, antenna, two knobs, and a simple grille.', image: require('@/assets/sketches/13-portable-radio.jpg') },
   { title: 'An equipment case', emoji: '🧳', minutes: 2, brief: 'Draw a wheeled equipment case with an extended handle, lid seam, and two visible wheels.', image: require('@/assets/sketches/14-equipment-case.jpg') },
   { title: 'A camping chair', emoji: '🏕️', minutes: 5, brief: 'Sketch a folding camping chair with armrests and crossed supports. Add a small folded side view.', image: require('@/assets/sketches/15-camping-chair.jpg') },
   { title: 'A canopy bench', emoji: '🌳', minutes: 5, brief: 'Draw a bench beneath a sloping canopy. Include a main perspective and a small side view showing the roof angle.', image: require('@/assets/sketches/16-canopy-bench.jpg') },
@@ -36,4 +39,6 @@ export const SAMPLE_SKETCHES: SampleSketch[] = [
   { title: 'A lookout shelter', emoji: '🛖', minutes: 5, brief: 'Draw a raised lookout shelter with a roof, railings, support posts, and ladder. Add a small roof plan.', image: require('@/assets/sketches/18-lookout-shelter.jpg') },
   { title: 'A cooking station', emoji: '🍳', minutes: 5, brief: 'Sketch a portable cooking station with a folding worktop, lower shelf, and windscreen. Add one hinge detail.', image: require('@/assets/sketches/19-cooking-station.jpg') },
   { title: 'An outdoor workstation', emoji: '🛠️', minutes: 5, brief: 'Design an outdoor workstation combining a seat, folding table, and adjustable canopy. Show one main perspective and a small collapsed view.', image: require('@/assets/sketches/20-outdoor-workstation.jpg') },
+  // Yesterday: the radio prompt, which friends drew too (data/friends.ts).
+  { title: 'A small radio', promptId: 'radio', emoji: '📻', minutes: 0.5, brief: 'Draw a small radio with a speaker, tuning knob, handle, and antenna.', image: require('@/assets/sketches/13-portable-radio.jpg') },
 ];

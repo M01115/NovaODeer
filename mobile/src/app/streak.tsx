@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ChunkyButton } from '@/components/chunky-button';
 import { Smudge } from '@/components/smudge';
+import { StreakShrimp } from '@/components/streak-shrimp';
 import { Colors, Ink, nunito, Palette } from '@/constants/theme';
 import { requestArchiveOpen } from '@/data/archive-events';
 import { getHistory, getStreak, toDateKey, type DayStatus } from '@/data/history';
@@ -16,11 +17,7 @@ const C = {
   buttonLip: '#000000',
   buttonText: '#FFFFFF',
   card: Palette.blue,
-  cardMuted: 'rgba(255, 255, 255, 0.35)',
   labelMuted: 'rgba(255, 255, 255, 0.85)',
-  done: '#FFFFFF',
-  ice: '#BFE3F5',
-  check: Ink.ink,
   today: Palette.yellow,
 };
 
@@ -52,8 +49,8 @@ export default function StreakScreen() {
   const startSketch = () => (router.canGoBack() ? router.back() : router.replace('/'));
   // The archive lives above Home: close this screen, then Home slides it open.
   const seePast = () => {
+    requestArchiveOpen(); // queued; Home opens it as soon as it's back in focus
     startSketch();
-    requestArchiveOpen();
   };
 
   return (
@@ -61,8 +58,8 @@ export default function StreakScreen() {
       <View style={{ flex: 102 }} />
 
       <View style={styles.mascot}>
-        <Smudge size={154} />
-        <Text style={styles.flame}>🔥</Text>
+        {/* Proud of the streak; gently sad (never guilt) when it's back to zero. */}
+        <Smudge size={154} mood={streak === 0 ? 'sad' : 'proud'} animated />
       </View>
 
       <View style={{ flex: 7 }} />
@@ -78,7 +75,7 @@ export default function StreakScreen() {
             <Text style={[styles.dayLabel, status === 'today' && styles.dayLabelToday]}>
               {label}
             </Text>
-            <DayDot status={status} />
+            <StreakShrimp status={status} size={40} />
           </View>
         ))}
       </View>
@@ -100,20 +97,6 @@ export default function StreakScreen() {
   );
 }
 
-function DayDot({ status }: { status: DayStatus }) {
-  if (status === 'done' || status === 'frozen') {
-    return (
-      <View style={[styles.dot, { backgroundColor: status === 'done' ? C.done : C.ice }]}>
-        <Text style={styles.check}>{status === 'frozen' ? '❄' : '✓'}</Text>
-      </View>
-    );
-  }
-  if (status === 'today') {
-    return <View style={[styles.dot, styles.dotToday]} />;
-  }
-  return <View style={[styles.dot, { backgroundColor: C.cardMuted }]} />;
-}
-
 const styles = StyleSheet.create({
   page: {
     flex: 1,
@@ -123,14 +106,6 @@ const styles = StyleSheet.create({
   },
   mascot: {
     alignSelf: 'center',
-  },
-  flame: {
-    fontFamily: nunito(400),
-    position: 'absolute',
-    left: -22,
-    top: -8,
-    fontSize: 46,
-    transform: [{ rotate: '-12deg' }],
   },
   number: {
     color: C.ink,
@@ -167,23 +142,6 @@ const styles = StyleSheet.create({
   },
   dayLabelToday: {
     color: C.today,
-  },
-  dot: {
-    width: 27,
-    height: 27,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dotToday: {
-    borderWidth: 2.5,
-    borderStyle: 'dashed',
-    borderColor: C.today,
-  },
-  check: {
-    color: C.check,
-    fontSize: 14,
-    fontFamily: nunito(900),
   },
   buttonWrap: {
     height: 47,

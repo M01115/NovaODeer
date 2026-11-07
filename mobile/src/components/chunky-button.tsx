@@ -1,8 +1,10 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Ink, nunito, Palette } from '@/constants/theme';
+import { playSound, type SoundId } from '@/lib/sounds';
 
 const VARIANTS = {
+  pink: { bg: Palette.pink, fg: Ink.ink },
   yellow: { bg: Palette.yellow, fg: Ink.ink },
   white: { bg: '#FFFFFF', fg: Ink.ink },
   orange: { bg: Palette.orange, fg: '#FFFFFF' },
@@ -20,9 +22,10 @@ const BORDER = 2.5;
 export function ChunkyButton({
   label,
   onPress,
-  variant = 'yellow',
+  variant = 'pink',
   size = 'large',
   icon,
+  sound = 'tap',
 }: {
   label: string;
   onPress: () => void;
@@ -30,12 +33,18 @@ export function ChunkyButton({
   size?: 'large' | 'medium';
   /** Optional leading glyph, e.g. "+" */
   icon?: string;
+  /** Sound on press (Morris's sound kit). Defaults to the bubble tap; null for silence. */
+  sound?: SoundId | null;
 }) {
   const v = VARIANTS[variant];
   const height = size === 'large' ? 58 : 48;
 
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={{ height: height + LIP }}>
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={() => {
+        if (sound) playSound(sound);
+        onPress();
+      }}
+      style={{ height: height + LIP }}>
       {({ pressed }) => (
         <>
           {/* The black shadow the button sits on */}

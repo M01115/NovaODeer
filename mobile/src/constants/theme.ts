@@ -62,8 +62,15 @@ const NUNITO = {
   900: 'Nunito_900Black',
 } as const;
 
+/**
+ * The app's font for a given weight. Every piece of text now uses Puff Hand, the mascot's
+ * hand-cut display font (components/puff-text.tsx); it has one weight, so `weight` only
+ * picks the Nunito fallback. Puff Hand covers a–z, A–Z, 0–9 and . , ! ? ' : - &; other
+ * characters (’ — … · emoji) fall back: to Nunito on the web, to the system font on iPhone.
+ * Kept the old name so every call site works unchanged.
+ */
 export function nunito(weight: keyof typeof NUNITO) {
-  return NUNITO[weight];
+  return Platform.OS === 'web' ? `PuffHand, ${NUNITO[weight]}, sans-serif` : 'PuffHand';
 }
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;

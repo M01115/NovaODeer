@@ -18,14 +18,15 @@ import { scheduleOnRN } from 'react-native-worklets';
 import { ArchiveView } from '@/components/archive-view';
 import { FeedView } from '@/components/feed-view';
 import { ChunkyButton } from '@/components/chunky-button';
-import { Smudge } from '@/components/smudge';
+import { Smudge, type SmudgeMood } from '@/components/smudge';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Ink, MaxContentWidth, nunito, Palette, Spacing } from '@/constants/theme';
-import { onArchiveRequest } from '@/data/archive-events';
+import { takeArchiveRequest } from '@/data/archive-events';
 import { getHistory, getStreak } from '@/data/history';
 import { DEFAULT_SECONDS, formatDuration, sayDuration } from '@/data/prompts';
 import { usePostedToday } from '@/data/today';
+import { playSound } from '@/lib/sounds';
 import { useTheme } from '@/hooks/use-theme';
 
 // The streak screen shows once per app launch (resets when the app restarts).
@@ -105,8 +106,21 @@ export default function HomeScreen() {
     setArchiveOpen(false);
   };
 
-  // The streak screen (and others) can ask for the archive.
-  useEffect(() => onArchiveRequest(openArchive));
+  // The streak screen's "See past sketches" asks for the archive: open it as Home comes
+  // back into focus (the streak screen closing), so the archive slides down from above.
+  useFocusEffect(
+    useCallback(() => {
+      if (!takeArchiveRequest()) return;
+      const id = setTimeout(() => {
+        setArchiveReady(true);
+        drag.set(springTo(screenH.get()));
+        settled(true);
+      }, 60);
+      return () => clearTimeout(id);
+      // springTo/settled only touch shared values and state setters
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+  );
 
   const pan = usePanGesture({
     activeOffsetY: [-12, 12],
@@ -189,7 +203,7 @@ export default function HomeScreen() {
   const promptBody = (
     <View style={[styles.promptBody, { paddingBottom: insets.bottom + Spacing.four }]}>
       <View style={styles.mascotArea}>
-        <Smudge size={200} animated />
+        <HomePuff />
         <ThemedView type="backgroundElement" style={styles.bubble}>
           <ThemedText type="small" style={styles.center}>
             Morning! {sayDuration(seconds)}, any paper. You’ve got this.
@@ -390,3 +404,39 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
 });
+
+/** Reactions when you poke Puff on Home, in turn. */
+const POKES: SmudgeMood[] = ['happy', 'surprised', 'bouncing'];
+const IDLE_MS = 15000;
+
+/**
+ * Puff on Home: calm (neutral) while you look at the prompt, drifting off (zoning out)
+ * when nothing happens for a while. Tap him and he reacts, then settles again.
+ */
+function HomePuff() {
+  const [mood, setMood] = useState<SmudgeMood>('neutral');
+  const [pokes, setPokes] = useState(0);
+
+  useEffect(() => {
+    // After a poke, settle back down; after a while with nothing, zone out.
+    const settle = setTimeout(() => setMood('neutral'), 2400);
+    const zone = setTimeout(() => setMood('zoning'), IDLE_MS);
+    return () => {
+      clearTimeout(settle);
+      clearTimeout(zone);
+    };
+  }, [pokes]);
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Poke the mascot"
+      onPress={() => {
+        playSound('reaction');
+        setMood(POKES[pokes % POKES.length]);
+        setPokes((n) => n + 1);
+      }}>
+      <Smudge size={200} mood={mood} animated />
+    </Pressable>
+  );
+}

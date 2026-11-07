@@ -9,8 +9,8 @@ import { useSyncExternalStore } from 'react';
 export type PostedSketch = {
   /** Seconds spent sketching (from the timer). */
   seconds: number;
-  /** The scanned/uploaded image (a URI or bundled module). Not available yet. */
-  image?: number;
+  /** The sketch image: a file/data URI (drawn in the app) or a bundled module. */
+  image?: number | string;
   /** Smudge's feedback on the sketch (from the AI). */
   feedback?: string;
 };

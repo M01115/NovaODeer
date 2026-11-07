@@ -2,8 +2,9 @@ import { useSyncExternalStore } from 'react';
 
 /**
  * The mascot's look: which of his accessories he's wearing. Shown everywhere he appears.
- * The accessories are layers from the team's mascot PSD (assets/mascot). To add more, draw
- * them as new layers in the same PSD, export, and add them here and in components/smudge.tsx.
+ * The accessories are layers from the team's mascot PSD (assets/puff, from Morris's rig). To add
+ * more, draw them as new layers in the same PSD, export, and add them here and in
+ * components/smudge.tsx (with the layer's position in PSD pixels).
  * In-memory for now (resets when the app restarts); save it to the backend later.
  */
 export type Hat = 'none' | 'beret';

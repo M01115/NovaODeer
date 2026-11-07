@@ -4,6 +4,8 @@
  * 5 minutes. Users don't choose. Placeholder list until prompts come from the backend.
  */
 export type Prompt = {
+  /** Stable id, links a prompt to friends' sketches of it (data/friends.ts). */
+  id?: string;
   text: string;
   /** Stand-in picture used until a real sketch image exists. */
   emoji: string;
@@ -39,7 +41,20 @@ function localDayNumber(date: Date): number {
   return Math.round(localMidnight.getTime() / 86_400_000 - localMidnight.getTimezoneOffset() / 1440);
 }
 
+/**
+ * Today's prompt, pinned for the demo: Brad Pitt is "today" whichever day the app is
+ * opened. Other days follow the rotation below.
+ */
+export const TODAY_PROMPT: Prompt = {
+  id: 'brad-pitt',
+  text: 'Brad Pitt',
+  emoji: '🎬',
+  brief: 'Draw a loose head-and-shoulders portrait of Brad Pitt.',
+  seconds: 300,
+};
+
 export function getPromptForDate(date: Date = new Date()): Prompt {
+  if (localDayNumber(date) === localDayNumber(new Date())) return TODAY_PROMPT;
   return PROMPTS[localDayNumber(date) % PROMPTS.length];
 }
 

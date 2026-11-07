@@ -1,30 +1,28 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { Easing, FadeOut, Keyframe, ReduceMotion } from 'react-native-reanimated';
+import Animated, { Easing, FadeOut, Keyframe, ReduceMotion, useReducedMotion } from 'react-native-reanimated';
 
 import { SketchThumb } from '@/components/sketch-thumb';
-import { Smudge } from '@/components/smudge';
+import { Smudge, type SmudgeMood } from '@/components/smudge';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { nunito, Spacing } from '@/constants/theme';
 import { getPromptForDate } from '@/data/prompts';
 import { REACTIONS, type Reaction } from '@/data/reactions';
-import { SAMPLE_SKETCHES } from '@/data/sketches';
+import { ReactionButton } from '@/components/reaction-button';
+import { getFriendSketches, MY_SAMPLE_SKETCHES } from '@/data/friends';
 import { type PostedSketch } from '@/data/today';
 import { useTheme } from '@/hooks/use-theme';
+import { playSound, startLoop, stopSound } from '@/lib/sounds';
 
-/**
- * Placeholder friends until accounts and friends come from the backend. Their drawings
- * are sample sketches standing in for real uploads of today's prompt.
- */
-const FRIENDS = [
-  { name: 'Sam', initial: 'S', color: '#A4BCD4', minutes: 4, image: SAMPLE_SKETCHES[10].image, counts: [5, 2, 1, 0, 3, 1] },
-  { name: 'Jun', initial: 'J', color: '#E2C98A', minutes: 6, image: SAMPLE_SKETCHES[15].image, counts: [8, 4, 2, 1, 0, 2] },
-  { name: 'Ana', initial: 'A', color: '#D9A6A0', minutes: 2, image: SAMPLE_SKETCHES[9].image, counts: [3, 1, 4, 0, 1, 0] },
-  { name: 'Leo', initial: 'L', color: '#B7C7A3', minutes: 5, image: SAMPLE_SKETCHES[14].image, counts: [6, 3, 0, 2, 2, 1] },
-];
-type Friend = (typeof FRIENDS)[number];
+/** A friend's sketch of today's prompt, flattened for the tiles and pop-up. */
+type Friend = { name: string; initial: string; color: string; minutes: number; image: number; counts: number[] };
+
+/** Friends' sketches of a prompt (everyone draws the same prompt each day). */
+function friendsFor(promptId?: string): Friend[] {
+  return getFriendSketches(promptId).map((s) => ({ ...s.friend, minutes: s.minutes, image: s.image, counts: s.counts }));
+}
 
 /** Friends' reactions on your own sketch, until the backend. */
 const MY_REACTION_COUNTS = [4, 3, 2, 1, 2, 1];
@@ -53,6 +51,7 @@ export function FeedView({ posted }: { posted: PostedSketch }) {
   const prompt = useMemo(() => getPromptForDate(), []);
   const [width, setWidth] = useState(0);
   const [open, setOpen] = useState<Friend | null>(null);
+  const friends = useMemo(() => friendsFor(prompt.id), [prompt.id]);
 
   return (
     <View style={styles.root}>
@@ -73,6 +72,8 @@ export function FeedView({ posted }: { posted: PostedSketch }) {
             posted={posted}
             promptText={prompt.text}
             promptEmoji={prompt.emoji}
+            friends={friends}
+            myStandIn={prompt.id ? MY_SAMPLE_SKETCHES[prompt.id] : undefined}
             width={width}
             onOpenFriend={setOpen}
           />
@@ -88,12 +89,17 @@ function PostedFeed({
   posted,
   promptText,
   promptEmoji,
+  friends,
+  myStandIn,
   width,
   onOpenFriend,
 }: {
   posted: PostedSketch;
   promptText: string;
   promptEmoji: string;
+  friends: Friend[];
+  /** Your sketch when the post has no image yet (scan is still a stub). */
+  myStandIn?: number;
   width: number;
   onOpenFriend: (f: Friend) => void;
 }) {
@@ -102,6 +108,7 @@ function PostedFeed({
   const feedback =
     posted.feedback ??
     `Ooh, ${promptText.toLowerCase()}! Love how loose and confident your lines are. That’s day 8 — keep it rolling!`;
+  const moment = useFeedbackMoment(posted, feedback);
 
   return (
     <>
@@ -113,7 +120,7 @@ function PostedFeed({
             {formatTime(posted.seconds)}
           </ThemedText>
         </View>
-        <SketchThumb size={width - 24} image={posted.image} emoji={promptEmoji} shape="card" />
+        <SketchThumb size={width - 24} image={posted.image ?? myStandIn} emoji={promptEmoji} shape="card" />
         {/* Friends' reactions to your sketch (positive emojis only). Placeholder counts. */}
         <View style={[styles.reactions, styles.myReactions]} accessibilityLabel="Reactions from friends">
           {REACTIONS.map((r, i) => (
@@ -130,16 +137,22 @@ function PostedFeed({
       {/* Smudge's feedback, with Smudge peeking over the sketch's bottom-right corner */}
       <View style={styles.feedbackRow}>
         <ThemedView type="backgroundElement" style={styles.feedbackBox}>
-          <ThemedText type="small">{feedback}</ThemedText>
+          {/* Full text keeps the box's size; the typed part shows on top of it. */}
+          <ThemedText type="small" style={styles.hiddenText}>
+            {feedback}
+          </ThemedText>
+          <ThemedText type="small" style={styles.typedText}>
+            {moment.typed === null ? moment.waitLine : feedback.slice(0, moment.typed)}
+          </ThemedText>
         </ThemedView>
         <View style={styles.mascot}>
-          <Smudge size={104} mood="proud" animated />
+          <Smudge size={104} mood={moment.mood} animated />
         </View>
       </View>
 
       {/* Friends' sketches */}
       <View style={styles.grid}>
-        {FRIENDS.map((f) => (
+        {friends.map((f) => (
           <Pressable
             key={f.name}
             accessibilityRole="button"
@@ -205,18 +218,15 @@ function FriendSketch({ friend, onClose }: { friend: Friend; onClose: () => void
           {REACTIONS.map((r, i) => {
             const on = mine.has(r);
             return (
-              <Pressable
+              <ReactionButton
                 key={r}
-                accessibilityRole="button"
-                accessibilityState={{ selected: on }}
-                accessibilityLabel={`React ${r}`}
-                onPress={() => toggle(r)}
-                style={[styles.reaction, on && { backgroundColor: theme.backgroundSelected }]}>
-                <Text style={styles.reactionEmoji}>{r}</Text>
-                <Text style={[styles.reactionCount, { color: theme.textSecondary }]}>
-                  {friend.counts[i] + (on ? 1 : 0)}
-                </Text>
-              </Pressable>
+                emoji={r}
+                count={friend.counts[i] + (on ? 1 : 0)}
+                on={on}
+                onToggle={() => toggle(r)}
+                selectedColor={theme.backgroundSelected}
+                countColor={theme.textSecondary}
+              />
             );
           })}
         </View>
@@ -225,7 +235,74 @@ function FriendSketch({ friend, onClose }: { friend: Friend; onClose: () => void
   );
 }
 
+/** Feedback moments already played (once per posted sketch). */
+const played = new WeakSet<PostedSketch>();
+
+/**
+ * Morris's "feedback" moment: Puff looks closely at your sketch (sonar scan), thinks
+ * (bubbles loop while the AI writes), jumps when the answer arrives ("aha!"), then cheers
+ * while his note types out word by word and lands with a little chime. Plays once per
+ * posted sketch; afterwards the note just shows. Times from puff.config.json.
+ */
+function useFeedbackMoment(posted: PostedSketch, text: string) {
+  const reduced = useReducedMotion();
+  const first = !played.has(posted) && !reduced;
+  const [mood, setMood] = useState<SmudgeMood>(first ? 'squint' : 'happy');
+  const [typed, setTyped] = useState<number | null>(first ? null : text.length);
+  const [waitLine, setWaitLine] = useState('Ooh, let me take a close look…');
+
+  useEffect(() => {
+    if (!first) return;
+    played.add(posted);
+    playSound('scan');
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const at = (ms: number, fn: () => void) => timers.push(setTimeout(fn, ms));
+    at(2200, () => {
+      setMood('thinking');
+      setWaitLine('Hmm, thinking…');
+      startLoop('thinking-loop', 0.6);
+    });
+    at(4000, () => {
+      stopSound('thinking-loop');
+      setMood('surprised');
+      playSound('aha');
+    });
+    at(4700, () => {
+      setMood('happy');
+      setTyped(0);
+    });
+    return () => {
+      timers.forEach(clearTimeout);
+      stopSound('thinking-loop');
+    };
+  }, [first, posted]);
+
+  // Type the note out, 28 ms a character, a soft blip on each word.
+  useEffect(() => {
+    if (typed === null || typed >= text.length) return;
+    const id = setTimeout(() => {
+      const next = typed + 1;
+      if (text[next - 1] === ' ') playSound('type-blip', { rate: 0.9 + Math.random() * 0.3, volume: 0.5 });
+      if (next === text.length) playSound('notice');
+      setTyped(next);
+    }, 28);
+    return () => clearTimeout(id);
+  }, [typed, text]);
+
+  return { mood, typed, waitLine };
+}
+
 const styles = StyleSheet.create({
+  hiddenText: {
+    opacity: 0,
+  },
+  typedText: {
+    // Same spot as the hidden full text: inside feedbackBox's padding.
+    position: 'absolute',
+    top: Spacing.three,
+    left: Spacing.three,
+    right: Spacing.three,
+  },
   root: {
     flex: 1,
   },

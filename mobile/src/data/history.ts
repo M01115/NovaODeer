@@ -89,7 +89,7 @@ export function getHistory(today: Date = new Date()): Day[] {
     const day: Day = { date: toDateKey(date), prompt: getPromptForDate(date), ...entry };
     const sample = entry.status === 'done' ? SAMPLE_SKETCHES[sketchIndex++] : undefined;
     if (sample) {
-      day.prompt = { text: sample.title, emoji: sample.emoji, brief: sample.brief };
+      day.prompt = { id: sample.promptId, text: sample.title, emoji: sample.emoji, brief: sample.brief };
       day.image = sample.image;
       day.minutes = sample.minutes;
     }

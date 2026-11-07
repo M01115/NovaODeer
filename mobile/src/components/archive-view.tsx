@@ -20,6 +20,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 import { SketchThumb } from '@/components/sketch-thumb';
 import { Smudge } from '@/components/smudge';
 import { formatShortDate, fromDateKey, getHistory, getWeekStats, toDateKey, type Day } from '@/data/history';
+import { getFriendSketches } from '@/data/friends';
 import { REACTIONS } from '@/data/reactions';
 import { nunito, Palette } from '@/constants/theme';
 
@@ -50,7 +51,22 @@ const popIn = new Keyframe({
   .duration(240)
   .reduceMotion(ReduceMotion.System);
 
+/** Space between a week's stats square and the cards around it. */
+const POCKET_PAD = 16;
+/** How far the stats mascot pokes up above its square. */
+const POCKET_MASCOT = 34;
+
 type Placed = { day: Day; index: number; week: number; x: number; y: number };
+type Pocket = {
+  week: number;
+  /** Index of the week's last card; the square sits just after it on the path. */
+  after: number;
+  x: number;
+  /** Top of the square. */
+  y: number;
+  size: number;
+  stats: ReturnType<typeof getWeekStats>;
+};
 
 /**
 
@@ -58,9 +74,10 @@ type Placed = { day: Day; index: number; week: number; x: number; y: number };
  *
  * The sketch archive, laid out like Duolingo's path: sketches sit along a winding S path
  * you scroll through (oldest at the top, newest at the bottom), swinging almost edge to
- * edge every ${WIGGLE} cards. Each week's stats sit in the empty pocket beside its turn, with
- * Smudge. The card nearest the middle of the screen grows (like hover) and nudges its
- * neighbours apart; tap it to pop it up.
+ * edge every ${WIGGLE} cards. Each week ends with a square of that week's stats (with Smudge)
+ * in its own slot on the path, so sketches never cover it. The card nearest the middle of the
+ * screen grows (like hover) and nudges its neighbours apart, stats squares included; tap it to
+ * pop it up.
  */
 export function ArchiveView({ onClose }: { onClose: () => void }) {
   const insets = useSafeAreaInsets();
@@ -90,55 +107,84 @@ export function ArchiveView({ onClose }: { onClose: () => void }) {
   const top = Math.max(MIN_TOP, viewHeight / 2 - cardMid);
   const bottom = Math.max(MIN_TOP, viewHeight / 2 - cardMid + 40);
 
-  // Lay the sketches on the path. Weeks count from the first day in the history.
+  const cardH = cardMid * 2;
+  // How far the hovered card's growth pushes everything above / below it out of the way.
+  const pushUp = ((HOVER_SCALE - 1) * cardH) / 2 + 8;
+  const pushDown = Math.max(pushUp, (cardH * (1 + HOVER_SCALE)) / 2 - SPACING - 28);
+  const pocketSize = Math.min(width * 0.32, 124);
+  // Vertical room one stats square takes on the path (mascot and padding included).
+  const pocketSlot = POCKET_PAD + POCKET_MASCOT + pocketSize + POCKET_PAD;
+
+  // Lay the sketches on the path, with a stats square after each week's last sketch.
+  // Weeks count from the first day in the history.
   const firstDay = history[0]?.date;
-  const placed: Placed[] = useMemo(() => {
-    if (!width || !firstDay) return [];
+  const { placed, pockets } = useMemo(() => {
+    if (!width || !firstDay) return { placed: [] as Placed[], pockets: [] as Pocket[] };
     const start = fromDateKey(firstDay).getTime();
     const weekOf = (d: Day) => Math.floor((fromDateKey(d.date).getTime() - start) / (7 * 86_400_000));
-    return sketches.map((day, index) => ({
-      day,
-      index,
-      week: weekOf(day),
-      // A sine wave down the screen: the S.
-      x: width / 2 + amp * Math.sin((2 * Math.PI * index) / WIGGLE),
-      y: top + index * SPACING,
-    }));
-  }, [width, firstDay, sketches, amp, top]);
-
-  // Last card top + its height (cardMid * 2) + room to reach the middle.
-  const contentH = top + Math.max(0, last) * SPACING + cardMid * 2 + bottom;
-
-  // One stats pocket per week, on the side the path isn't using.
-  const pockets = useMemo(() => {
-    const weeks = new Map<number, Placed[]>();
-    placed.forEach((p) => weeks.set(p.week, [...(weeks.get(p.week) ?? []), p]));
     // Stats never run past yesterday (today has no sketch yet).
     const todayKey = history.find((d) => d.status === 'today')?.date ?? firstDay;
     const t = fromDateKey(todayKey);
     const yesterday = toDateKey(new Date(t.getFullYear(), t.getMonth(), t.getDate() - 1));
-    return [...weeks.entries()].map(([week, cards]) => {
-      // Sit beside the week's sharpest turn, on the side the path isn't using.
-      const turn = cards.reduce((a, b) => (Math.abs(b.x - width / 2) > Math.abs(a.x - width / 2) ? b : a));
-      const side = turn.x >= width / 2 ? -1 : 1;
-      const weekEndDate = new Date(fromDateKey(firstDay).getTime() + (week * 7 + 6) * 86_400_000);
+    const xAt = (index: number) => width / 2 + amp * Math.sin((2 * Math.PI * index) / WIGGLE);
+
+    const cards: Placed[] = [];
+    const squares: Pocket[] = [];
+    const addPocket = (prev: Placed) => {
+      const weekEndDate = new Date(start + (prev.week * 7 + 6) * 86_400_000);
       const weekEnd = toDateKey(weekEndDate) > yesterday ? yesterday : toDateKey(weekEndDate);
-      return { week, side, y: turn.y - 10, stats: getWeekStats(weekEnd, history) };
+      // On the side away from where the path runs through the gap.
+      const pathX = (prev.x + xAt(prev.index + 1)) / 2;
+      const x = pathX >= width / 2 ? 18 + pocketSize / 2 : width - 18 - pocketSize / 2;
+      squares.push({
+        week: prev.week,
+        after: prev.index,
+        x,
+        y: prev.y + cardH + POCKET_PAD + POCKET_MASCOT,
+        size: pocketSize,
+        stats: getWeekStats(weekEnd, history),
+      });
+    };
+    sketches.forEach((day, index) => {
+      const week = weekOf(day);
+      const prev = cards[index - 1];
+      let y = top;
+      if (prev && prev.week !== week) {
+        // New week: leave a slot below the last card for that week's stats.
+        addPocket(prev);
+        y = prev.y + cardH + pocketSlot;
+      } else if (prev) {
+        y = prev.y + SPACING;
+      }
+      // A sine wave down the screen: the S.
+      cards.push({ day, index, week, x: xAt(index), y });
     });
-  }, [placed, firstDay, history, width]);
+    if (cards.length) addPocket(cards[cards.length - 1]);
+    return { placed: cards, pockets: squares };
+  }, [width, firstDay, sketches, amp, top, history, cardH, pocketSize, pocketSlot]);
+
+  const lastY = placed[last]?.y ?? top;
+  // Room for the last card to reach the middle, and for this week's stats under it.
+  const contentH = Math.max(lastY + cardH + bottom, lastY + cardH + pocketSlot + 90);
+  // Card centres, for finding the one nearest the middle of the screen.
+  const centres = useMemo(() => placed.map((p) => p.y + cardMid), [placed, cardMid]);
 
   // Keep React's idea of the middle card in sync, only when it changes.
   useAnimatedReaction(
     () => {
       const centre = scrollY.get() + viewH.get() / 2;
-      return Math.min(last, Math.max(0, Math.round((centre - top - cardMid) / SPACING)));
+      let best = 0;
+      for (let i = 1; i < centres.length; i++) {
+        if (Math.abs(centres[i] - centre) < Math.abs(centres[best] - centre)) best = i;
+      }
+      return best;
     },
     (current, previous) => {
       if (current === previous) return;
       focus.set(current);
       scheduleOnRN(setFocusIndex, current);
     },
-    [top, cardMid, last]
+    [centres]
   );
 
   const onScroll = useAnimatedScrollHandler((e) => {
@@ -146,7 +192,7 @@ export function ArchiveView({ onClose }: { onClose: () => void }) {
   });
 
   const centreOn = (index: number, animated = true) => {
-    const y = top + index * SPACING + cardMid - viewH.get() / 2;
+    const y = (centres[index] ?? top) - viewH.get() / 2;
     scrollRef.current?.scrollTo({ y: Math.max(0, y), animated });
   };
 
@@ -214,14 +260,15 @@ export function ArchiveView({ onClose }: { onClose: () => void }) {
               screenW={width}
               index={p.index}
               focus={focus}
+              push={{ up: pushUp, down: pushDown }}
               isFocused={p.index === focusIndex}
               onPress={() => (p.index === focusIndex ? setZoomed(p.day) : centreOn(p.index))}
             />
           ))}
 
-          {/* Weekly stats sit on top, like stickers in the S curve's pockets. */}
+          {/* Each week's stats, in their own slot on the path after the week's last sketch. */}
           {pockets.map((p) => (
-            <WeekPocket key={p.week} pocket={p} width={width} />
+            <WeekPocket key={p.week} pocket={p} focus={focus} push={{ up: pushUp, down: pushDown }} />
           ))}
         </View>
       </Animated.ScrollView>
@@ -250,6 +297,7 @@ function PathCard({
   screenW,
   index,
   focus,
+  push,
   isFocused,
   onPress,
 }: {
@@ -258,18 +306,18 @@ function PathCard({
   screenW: number;
   index: number;
   focus: SharedValue<number>;
+  /** How far the hovered card's growth pushes cards above (up) and below (down) it. */
+  push: { up: number; down: number };
   isFocused: boolean;
   onPress: () => void;
 }) {
   const { day, x, y } = placed;
   const imageSize = cardW - 12;
   const cardH = 6 + HEADER_H + imageSize + 6;
-
-  // How far the hovered card's growth pushes its neighbours away. Older cards (above) sit
-  // under it anyway; newer cards (below) are on top, so they move down until only a thin
-  // strip still overlaps the hovered card.
-  const pushUp = ((HOVER_SCALE - 1) * cardH) / 2 + 8;
-  const pushDown = Math.max(pushUp, (cardH * (1 + HOVER_SCALE)) / 2 - SPACING - 28);
+  // Older cards (above) sit under the hovered one anyway; newer cards (below) are on top,
+  // so they move down until only a thin strip still overlaps it.
+  const pushUp = push.up;
+  const pushDown = push.down;
 
   // Exactly one card is hovered: the one nearest the middle of the screen. It grows, stays
   // inside the screen, and the cards above and below step aside. Changes ease over 200ms.
@@ -313,24 +361,50 @@ function PathCard({
   );
 }
 
-/** A week's stats, pinned in the pocket beside that week's stretch of path, with Smudge. */
+/**
+ * A week's stats as a square, with Smudge sitting on it. It has its own slot after the
+ * week's last sketch and steps aside with its neighbours when a card grows, so it's never
+ * covered.
+ */
 function WeekPocket({
   pocket,
-  width,
+  focus,
+  push,
 }: {
-  pocket: { week: number; side: number; y: number; stats: ReturnType<typeof getWeekStats> };
-  width: number;
+  pocket: Pocket;
+  focus: SharedValue<number>;
+  push: { up: number; down: number };
 }) {
-  const w = Math.min(width * 0.27, 108);
-  const left = pocket.side < 0 ? 18 : width - 18 - w;
-  const { stats } = pocket;
+  const { stats, size } = pocket;
+  const onRight = pocket.x > size;
+
+  const style = useAnimatedStyle(() => {
+    // It sits between card `after` and the next one.
+    const pushY = pocket.after < focus.get() ? -push.up : push.down;
+    return {
+      transform: [
+        { translateY: withTiming(pushY, { duration: 200, easing: EASE_OUT, reduceMotion: ReduceMotion.System }) },
+      ],
+    };
+  });
 
   return (
-    <View pointerEvents="none" style={[styles.pocket, { top: pocket.y, left, width: w }]}>
-      <View style={[styles.pocketMascot, pocket.side > 0 && styles.pocketMascotRight]}>
-        <Smudge size={40} animated />
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        styles.pocket,
+        { top: pocket.y - POCKET_MASCOT, left: pocket.x - size / 2, width: size },
+        style,
+      ]}>
+      <View style={[styles.pocketMascot, onRight && styles.pocketMascotRight]}>
+        {/* Proud of a full week, happy for most of one, calm otherwise. */}
+        <Smudge size={40} mood={stats.sketched >= 7 ? 'proud' : stats.sketched >= 5 ? 'happy' : 'neutral'} animated />
       </View>
-      <View style={[styles.statsCard, { backgroundColor: POCKET_COLORS[pocket.week % POCKET_COLORS.length] }]}>
+      <View
+        style={[
+          styles.statsCard,
+          { width: size, height: size, backgroundColor: POCKET_COLORS[pocket.week % POCKET_COLORS.length] },
+        ]}>
         <Text style={styles.statsRange}>
           {formatShortDate(stats.from)} – {formatShortDate(stats.to)}
         </Text>
@@ -344,7 +418,7 @@ function WeekPocket({
           {stats.freezes > 0 && <Text style={styles.statsSmall}>❄️ {stats.freezes}</Text>}
         </View>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -352,6 +426,7 @@ function WeekPocket({
 function ZoomedSketch({ day, onClose }: { day: Day; onClose: () => void }) {
   // Placeholder counts until reactions come from the backend.
   const counts = [12, 7, 5, 3, 2, 1];
+  const friends = getFriendSketches(day.prompt.id);
 
   return (
     <Animated.View exiting={FadeOut.duration(150)} style={styles.zoomLayer}>
@@ -384,6 +459,26 @@ function ZoomedSketch({ day, onClose }: { day: Day; onClose: () => void }) {
             </View>
           ))}
         </View>
+
+        {/* Everyone drew the same prompt that day: friends' takes on it. */}
+        {friends.length > 0 && (
+          <View style={styles.friendsBlock}>
+            <Text style={styles.friendsTitle}>Friends drew it too</Text>
+            <View style={styles.friendsRow}>
+              {friends.map((f) => (
+                <View key={f.friend.id} style={styles.friendCol}>
+                  <SketchThumb size={84} image={f.image} emoji={day.prompt.emoji} shape="card" />
+                  <View style={styles.friendName}>
+                    <View style={[styles.friendAvatar, { backgroundColor: f.friend.color }]}>
+                      <Text style={styles.friendInitial}>{f.friend.initial}</Text>
+                    </View>
+                    <Text style={styles.friendNameText}>{f.friend.name}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
       </Animated.View>
     </Animated.View>
   );
@@ -457,10 +552,10 @@ const styles = StyleSheet.create({
   },
   statsCard: {
     backgroundColor: '#E8E6E0',
-    borderRadius: 14,
-    paddingHorizontal: 10,
-    paddingTop: 13,
-    paddingBottom: 9,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    justifyContent: 'center',
   },
   statsRange: {
     color: MUTED,
@@ -537,6 +632,46 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 14,
     boxShadow: '0 20px 50px rgba(0, 0, 0, 0.25)',
+  },
+  friendsBlock: {
+    alignSelf: 'stretch',
+    gap: 8,
+  },
+  friendsTitle: {
+    color: MUTED,
+    fontSize: 12,
+    fontFamily: nunito(700),
+    letterSpacing: 0.3,
+  },
+  friendsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  friendCol: {
+    alignItems: 'center',
+    gap: 5,
+  },
+  friendName: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  friendAvatar: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  friendInitial: {
+    color: INK,
+    fontSize: 9,
+    fontFamily: nunito(800),
+  },
+  friendNameText: {
+    color: INK,
+    fontSize: 12,
+    fontFamily: nunito(700),
   },
   zoomHeader: {
     flexDirection: 'row',

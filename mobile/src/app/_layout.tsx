@@ -11,8 +11,9 @@ import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { PhoneFrame } from '@/components/phone-frame';
+import { PUFF_FONTS } from '@/components/puff-text';
+import { PuffIntro } from '@/components/puff-intro';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 SplashScreen.preventAutoHideAsync();
@@ -27,13 +28,14 @@ export default function RootLayout() {
     Nunito_700Bold,
     Nunito_800ExtraBold,
     Nunito_900Black,
+    // Puff Hand, the mascot's display font (components/puff-text.tsx).
+    ...PUFF_FONTS,
   });
   if (!fontsLoaded) return null;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <AnimatedSplashOverlay />
         <PhoneFrame>
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />
@@ -41,6 +43,8 @@ export default function RootLayout() {
             <Stack.Screen name="profile" options={{ presentation: 'modal' }} />
             {/* Sketch session (timer), opened from "+ Snap my sketch". */}
             <Stack.Screen name="session" options={{ presentation: 'modal' }} />
+            {/* Draw on the phone. Full screen, so a downward stroke can't swipe it away. */}
+            <Stack.Screen name="draw" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
             {/* Streak completion, right after posting today's sketch. */}
             <Stack.Screen
               name="complete"
@@ -52,6 +56,8 @@ export default function RootLayout() {
               options={{ presentation: 'fullScreenModal', animation: 'fade' }}
             />
           </Stack>
+          {/* Puff rolls in when the app opens (Morris's "App opens" moment). */}
+          <PuffIntro />
         </PhoneFrame>
       </ThemeProvider>
     </GestureHandlerRootView>

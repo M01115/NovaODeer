@@ -1,7 +1,6 @@
-import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
   FadeIn,
@@ -14,26 +13,23 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Path } from 'react-native-svg';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { ChunkyButton } from '@/components/chunky-button';
 import { Smudge } from '@/components/smudge';
+import { StreakFlame } from '@/components/streak-flame';
+import { StreakShrimp } from '@/components/streak-shrimp';
 import { Colors, Ink, nunito } from '@/constants/theme';
 import { getHistory, getStreak, toDateKey, type DayStatus } from '@/data/history';
+import { playSound } from '@/lib/sounds';
 
 const ORANGE = '#FF9600';
 const ORANGE_LIP = '#E07B00';
-const ICE = '#7CC8F2';
 const UNLIT = '#E3E0D9';
 const BAR = '#FFC800';
 
 const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-
-/** A flame: rounded body with a flicker on the left, like Duolingo's streak flame. */
-const FLAME_PATH =
-  'M50 4 C64 26 90 46 90 76 C90 100 72 116 50 116 C28 116 10 100 10 76 C10 56 24 46 34 30 C38 44 44 50 50 52 C46 36 46 20 50 4 Z';
 
 // --- Motion (rare, earned moments: these may bounce) ---
 const pop = (from: number, peak: number, ms: number) =>
@@ -47,13 +43,6 @@ const pop = (from: number, peak: number, ms: number) =>
 
 const flameIn = pop(0.3, 1.18, 560);
 const mascotIn = pop(0.85, 1.06, 420);
-const lightUp = new Keyframe({
-  0: { transform: [{ scale: 1 }] },
-  45: { transform: [{ scale: 1.45 }] },
-  100: { transform: [{ scale: 1 }], easing: EASE_OUT },
-})
-  .duration(420)
-  .reduceMotion(ReduceMotion.System);
 const numberIn = new Keyframe({
   0: { opacity: 0, transform: [{ translateY: 36 }] },
   100: { opacity: 1, transform: [{ translateY: 0 }], easing: EASE_OUT },
@@ -93,6 +82,11 @@ export default function CompleteScreen() {
     return { before: getStreak(history), week: days, todayIndex: today.getDay() };
   }, []);
 
+  // Your sketch bubbles up to the surface as the screen opens.
+  useEffect(() => {
+    playSound('post');
+  }, []);
+
   // Beat 1: the bar fills, then on to the streak.
   const progress = useSharedValue(0);
   useEffect(() => {
@@ -107,19 +101,23 @@ export default function CompleteScreen() {
     );
   }, [progress]);
 
-  // Beat 2: today's flame lights up and the number rolls over.
+  // Beat 2: today's gray shrimp cooks (spins, catches fire, turns red); when it turns
+  // red the number rolls over (StreakShrimp buzzes the phone then).
+  const [cooking, setCooking] = useState(false);
   useEffect(() => {
     if (phase !== 'streak') return;
-    const light = setTimeout(() => {
-      setLit(true);
-      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }, 1100);
-    const cont = setTimeout(() => setShowContinue(true), 1600);
-    return () => {
-      clearTimeout(light);
-      clearTimeout(cont);
-    };
-  }, [phase]);
+    const cook = setTimeout(() => {
+      setCooking(true);
+      // The completion sound, synced to the cooking: a bigger one on milestone days.
+      playSound([3, 7, 30, 100].includes(before + 1) ? 'milestone' : 'streak');
+    }, 900);
+    return () => clearTimeout(cook);
+  }, [phase, before]);
+  useEffect(() => {
+    if (!lit) return;
+    const cont = setTimeout(() => setShowContinue(true), 700);
+    return () => clearTimeout(cont);
+  }, [lit]);
 
   const barStyle = useAnimatedStyle(() => ({ transform: [{ scaleX: progress.get() }] }));
   const streak = lit ? before + 1 : before;
@@ -134,68 +132,76 @@ export default function CompleteScreen() {
             {/* Plain wrapper reserves the space; the animated child can't collapse the layout. */}
             <View style={styles.mascotBox}>
               <Animated.View entering={mascotIn} style={StyleSheet.absoluteFill}>
-                <Smudge size={200} mood="proud" animated />
+                {/* He puffs up as the bar fills. */}
+                <Smudge size={200} mood="puffup" animated />
               </Animated.View>
             </View>
-            <View style={styles.barTrack}>
-              <Animated.View style={[styles.barFill, barStyle]} />
+            {/* The bar fills toward today's live shrimp (Duolingo's chest). */}
+            <View style={styles.barRow}>
+              <View style={styles.barTrack}>
+                <Animated.View style={[styles.barFill, barStyle]} />
+              </View>
+              <StreakShrimp status="today" size={44} />
             </View>
+            <Animated.View entering={FadeInDown.delay(200).duration(260).reduceMotion(ReduceMotion.System)} style={styles.texts}>
+              <Text style={styles.title}>
+                Sketch Complete! <Text style={styles.titleAccent}>+1 day</Text>
+              </Text>
+              <Text style={styles.subtitle}>Your shrimp is about to get cooked…</Text>
+            </Animated.View>
           </Animated.View>
         ) : (
           <Animated.View key="streak" entering={FadeIn.duration(200)} style={styles.center}>
             {/* Big flame with the streak number */}
             <View style={styles.bigFlame}>
             <Animated.View entering={flameIn} style={StyleSheet.absoluteFill}>
-              <Svg width={180} height={216} viewBox="0 0 100 120" style={StyleSheet.absoluteFill}>
-                <Path d={FLAME_PATH} fill={ORANGE} />
-              </Svg>
+              <StreakFlame width={180} flare={lit ? 'lit' : 'unlit'}>
               <View style={styles.numberSlot}>
                 <Animated.Text key={streak} entering={numberIn} exiting={numberOut} style={styles.number}>
                   {streak}
                 </Animated.Text>
               </View>
+              </StreakFlame>
             </Animated.View>
             </View>
 
-            {/* This week's flames */}
+            {/* This week's shrimp: red = done, frozen = freeze, gray = not yet. Today's cooks. */}
             <View style={styles.week}>
               {week.map((d, i) => {
                 const isToday = i === todayIndex;
-                const status = isToday && lit ? 'done' : d.status;
-                const fill = status === 'done' ? ORANGE : status === 'frozen' ? ICE : UNLIT;
                 return (
                   <Animated.View
                     key={i}
                     entering={FadeInDown.delay(250 + i * 70).duration(260).reduceMotion(ReduceMotion.System)}
-                    style={styles.smallBox}>
-                    <Animated.View
-                      key={isToday && lit ? 'lit' : 'unlit'}
-                      entering={isToday && lit ? lightUp : undefined}
-                      style={[StyleSheet.absoluteFill, styles.smallFlame]}>
-                      <Svg width={36} height={43} viewBox="0 0 100 120" style={StyleSheet.absoluteFill}>
-                        <Path d={FLAME_PATH} fill={fill} />
-                      </Svg>
-                      <Text style={[styles.dayLetter, { color: status === 'locked' || status === 'missed' ? '#A9A59C' : '#FFFFFF' }]}>
-                        {d.label}
-                      </Text>
-                    </Animated.View>
+                    style={[styles.dayCol, isToday && styles.onTop]}>
+                    <StreakShrimp
+                      status={d.status}
+                      size={40}
+                      cook={isToday && cooking}
+                      onCooked={() => setLit(true)}
+                    />
+                    <Text style={[styles.dayLetter, isToday && styles.dayLetterToday]}>{d.label}</Text>
                   </Animated.View>
                 );
               })}
             </View>
 
-            <Animated.Text entering={FadeIn.delay(500).duration(300)} style={styles.caption}>
-              day streak!
-            </Animated.Text>
+            <Animated.View entering={FadeIn.delay(500).duration(300)} style={styles.texts}>
+              <Text style={styles.title}>{streak} Day Streak!</Text>
+              <Text style={styles.subtitle}>Sketch every day to build your streak</Text>
+            </Animated.View>
           </Animated.View>
         )}
       </View>
 
-      {showContinue && (
-        <Animated.View entering={FadeInDown.duration(260).reduceMotion(ReduceMotion.System)}>
-          <ChunkyButton label="CONTINUE" variant="orange" onPress={() => router.dismissTo('/')} />
-        </Animated.View>
-      )}
+      {/* The button's space is reserved from the start, so nothing above shifts when it appears. */}
+      <View style={styles.continueSlot}>
+        {showContinue && (
+          <Animated.View entering={FadeInDown.duration(260).reduceMotion(ReduceMotion.System)}>
+            <ChunkyButton label="CONTINUE" sound="unlock-feed" onPress={() => router.dismissTo('/')} />
+          </Animated.View>
+        )}
+      </View>
     </View>
   );
 }
@@ -252,8 +258,40 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 28,
   },
-  barTrack: {
+  continueSlot: {
+    // ChunkyButton (large): 58 face + 5 shadow.
+    height: 63,
+  },
+  barRow: {
     width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  texts: {
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+  },
+  title: {
+    color: Ink.ink,
+    fontSize: 24,
+    lineHeight: 30,
+    fontFamily: nunito(900),
+    textAlign: 'center',
+  },
+  titleAccent: {
+    color: ORANGE,
+  },
+  subtitle: {
+    color: '#77736B',
+    fontSize: 16,
+    lineHeight: 23,
+    fontFamily: nunito(600),
+    textAlign: 'center',
+  },
+  barTrack: {
+    flex: 1,
     height: 18,
     borderRadius: 9,
     backgroundColor: UNLIT,
@@ -293,20 +331,22 @@ const styles = StyleSheet.create({
   },
   week: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 4,
   },
-  smallBox: {
-    width: 36,
-    height: 43,
-  },
-  smallFlame: {
+  dayCol: {
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    paddingBottom: 7,
+    gap: 2,
+  },
+  onTop: {
+    zIndex: 2,
   },
   dayLetter: {
     fontSize: 13,
     fontFamily: nunito(800),
+    color: '#A9A59C',
+  },
+  dayLetterToday: {
+    color: ORANGE,
   },
   caption: {
     color: Ink.ink,
