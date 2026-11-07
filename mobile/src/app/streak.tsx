@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Smudge } from '@/components/smudge';
 import { Colors, Ink } from '@/constants/theme';
+import { requestArchiveOpen } from '@/data/archive-events';
 import { getHistory, getStreak, toDateKey, type DayStatus } from '@/data/history';
 
 // Paper and ink, with the one red spot colour for today.
@@ -48,7 +49,11 @@ export default function StreakScreen() {
 
   // Home is today's prompt, so starting the sketch just closes this screen.
   const startSketch = () => (router.canGoBack() ? router.back() : router.replace('/'));
-  const seePast = () => router.replace('/archive');
+  // The archive lives above Home: close this screen, then Home slides it open.
+  const seePast = () => {
+    startSketch();
+    requestArchiveOpen();
+  };
 
   return (
     <View style={[styles.page, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>

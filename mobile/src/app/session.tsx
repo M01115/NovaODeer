@@ -10,13 +10,20 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Ink, Spacing } from '@/constants/theme';
 import { getPromptForDate } from '@/data/prompts';
+import { markPostedToday } from '@/data/today';
 import { useTheme } from '@/hooks/use-theme';
 
 const DURATIONS = [2, 5, 10]; // minutes
 type Phase = 'setup' | 'running' | 'paused' | 'done';
 
-function comingSoon(feature: string) {
-  Alert.alert('Coming soon', `${feature} isn't built yet.`);
+/**
+ * Stand-in for scanning/uploading (being built separately): counts as posting today's
+ * sketch, which unlocks the friends feed. Replace with the real scan flow.
+ */
+function postSketch(via: string) {
+  markPostedToday();
+  Alert.alert('Posted!', `${via} isn't built yet, but today counts as posted. Your friends' sketches are unlocked in Feed.`);
+  router.back();
 }
 
 function haptic(kind: 'warning' | 'success') {
@@ -221,8 +228,8 @@ export default function SessionScreen() {
 
         {phase === 'done' && (
           <>
-            <PrimaryButton label="📷  Scan my sketch" onPress={() => comingSoon('Scanning')} />
-            <SecondaryButton label="Choose from photos" onPress={() => comingSoon('Photo library')} />
+            <PrimaryButton label="📷  Scan my sketch" onPress={() => postSketch('Scanning')} />
+            <SecondaryButton label="Choose from photos" onPress={() => postSketch('Photo library')} />
             <Pressable
               accessibilityRole="button"
               onPress={() => router.back()}

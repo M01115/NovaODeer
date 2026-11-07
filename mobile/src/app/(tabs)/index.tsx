@@ -1,12 +1,10 @@
 import * as Haptics from 'expo-haptics';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { type LayoutChangeEvent, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import Animated, {
   Extrapolation,
-  FadeIn,
-  FadeOut,
   interpolate,
   ReduceMotion,
   useAnimatedStyle,
@@ -17,45 +15,35 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 
+import { ArchiveView } from '@/components/archive-view';
 import { Smudge } from '@/components/smudge';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { onArchiveRequest } from '@/data/archive-events';
 import { formatShortDate, getHistory, getStreak, toDateKey } from '@/data/history';
 import { useTheme } from '@/hooks/use-theme';
 
 // The streak screen shows once per app launch (resets when the app restarts).
 let streakShownThisLaunch = false;
 
-/** Pull down past this distance (pt), or flick faster than this (pt/s), to open the archive. */
-const OPEN_DISTANCE = 110;
+/** Let go past this fraction of the screen, or flick faster than this (pt/s), to open the archive. */
+const OPEN_FRACTION = 0.25;
 const OPEN_VELOCITY = 700;
-const RUBBER_LIMIT = 320;
+/** Distance over which the top-edge hint wakes up. */
+const HINT_DISTANCE = 70;
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-/** Rubber-band resistance: follows the finger at first, then stiffens. */
-function rubberBand(offset: number) {
-  'worklet';
-  const distance = Math.abs(offset);
-  const resisted = (1 - 1 / ((distance * 0.55) / RUBBER_LIMIT + 1)) * RUBBER_LIMIT;
-  return Math.sign(offset) * resisted;
-}
-
-function openArchive() {
-  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  router.push('/archive');
-}
-
 /**
- * Home is all about today's prompt. The sketch archive lives "above" it: pull down
- * (or tap the hint at the top edge) to open it.
+ * Home is all about today's prompt. The sketch archive sits directly above it, in the same
+ * screen: pulling down drags Home down and the archive in, 1:1 with the finger, and letting
+ * go springs the rest of the way (or back) carrying the finger's speed. One continuous move.
  */
 export default function HomeScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
-  const [menuOpen, setMenuOpen] = useState(false);
 
   const days = useMemo(() => getHistory(), []);
   const streak = getStreak(days);
@@ -72,45 +60,82 @@ export default function HomeScreen() {
     }, [])
   );
 
-  // Pull down to open the archive. Only downward drags move the page.
+  // Archive layer. `drag` is how far Home has moved down: 0 = Home, screenH = archive.
   const drag = useSharedValue(0);
+  const screenH = useSharedValue(800);
+  const [archiveOpen, setArchiveOpen] = useState(false);
+  // Mount the archive just after Home appears, so the first pull is already smooth.
+  const [archiveReady, setArchiveReady] = useState(false);
+  useEffect(() => {
+    const id = setTimeout(() => setArchiveReady(true), 400);
+    return () => clearTimeout(id);
+  }, []);
+
+  const springTo = (target: number, velocity = 0) => {
+    'worklet';
+    // Sheet spring; never overshoots past either edge.
+    return withSpring(target, {
+      duration: 420,
+      dampingRatio: 0.9,
+      velocity,
+      overshootClamping: true,
+      reduceMotion: ReduceMotion.System,
+    });
+  };
+
+  const settled = (open: boolean) => {
+    setArchiveOpen(open);
+    if (open && Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  const openArchive = () => {
+    setArchiveReady(true);
+    drag.set(springTo(screenH.get()));
+    settled(true);
+  };
+  const closeArchive = () => {
+    drag.set(springTo(0));
+    setArchiveOpen(false);
+  };
+
+  // The streak screen (and others) can ask for the archive.
+  useEffect(() => onArchiveRequest(openArchive));
+
   const pan = usePanGesture({
     activeOffsetY: [-12, 12],
     failOffsetX: [-24, 24],
     onUpdate: (e) => {
       'worklet';
       if (reducedMotion) return;
-      drag.set(rubberBand(Math.max(0, e.translationY)));
+      // Follows the finger exactly: Home slides down, the archive comes in from above.
+      drag.set(Math.min(Math.max(0, e.translationY), screenH.get()));
     },
     onDeactivate: (e) => {
       'worklet';
-      if (e.translationY > OPEN_DISTANCE || e.velocityY > OPEN_VELOCITY) {
-        scheduleOnRN(openArchive);
-      }
-      drag.set(
-        withSpring(0, {
-          duration: 400,
-          dampingRatio: 0.8,
-          velocity: e.velocityY,
-          reduceMotion: ReduceMotion.System,
-        })
-      );
+      const open = e.translationY > screenH.get() * OPEN_FRACTION || e.velocityY > OPEN_VELOCITY;
+      drag.set(springTo(open ? screenH.get() : 0, e.velocityY));
+      if (open) scheduleOnRN(settled, true);
     },
   });
 
   const pageStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: drag.get() }],
   }));
-  // The hint wakes up as you pull: darker and dropping, ready to open.
+  const archiveStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: drag.get() - screenH.get() }],
+  }));
+  // The hint wakes up as you pull: darker and dropping.
   const hintStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(drag.get(), [0, OPEN_DISTANCE * 0.6], [0.55, 1], Extrapolation.CLAMP),
-    transform: [
-      { translateY: interpolate(drag.get(), [0, OPEN_DISTANCE * 0.6], [0, 6], Extrapolation.CLAMP) },
-    ],
+    opacity: interpolate(drag.get(), [0, HINT_DISTANCE], [0.55, 1], Extrapolation.CLAMP),
+    transform: [{ translateY: interpolate(drag.get(), [0, HINT_DISTANCE], [0, 6], Extrapolation.CLAMP) }],
   }));
 
+  const onScreenLayout = (e: LayoutChangeEvent) => {
+    screenH.set(e.nativeEvent.layout.height);
+  };
+
   return (
-    <ThemedView style={styles.screen}>
+    <ThemedView style={styles.screen} onLayout={onScreenLayout}>
       <GestureDetector gesture={pan}>
         <Animated.View
           style={[
@@ -151,16 +176,6 @@ export default function HomeScreen() {
             <ThemedText type="smallBold" themeColor="textSecondary">
               {dateLabel}
             </ThemedText>
-
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Menu"
-              onPress={() => setMenuOpen((v) => !v)}
-              style={({ pressed }) => pressed && styles.pressed}>
-              <ThemedView type="backgroundElement" style={styles.pill}>
-                <ThemedText type="smallBold">•••</ThemedText>
-              </ThemedView>
-            </Pressable>
           </View>
 
           <View style={styles.mascotArea}>
@@ -197,48 +212,23 @@ export default function HomeScreen() {
         </Animated.View>
       </GestureDetector>
 
-      {menuOpen && (
-        <>
-          <Pressable style={StyleSheet.absoluteFill} onPress={() => setMenuOpen(false)} />
-          <Animated.View
-            entering={FadeIn.duration(150)}
-            exiting={FadeOut.duration(120)}
-            style={[styles.menu, { top: insets.top + 86, backgroundColor: theme.background }]}>
-            <MenuItem
-              label="🗺️  My sketch path"
-              onPress={() => {
-                setMenuOpen(false);
-                router.push('/journey');
-              }}
-            />
-            <MenuItem
-              label="🗂️  Sketch archive"
-              onPress={() => {
-                setMenuOpen(false);
-                openArchive();
-              }}
-            />
-          </Animated.View>
-        </>
-      )}
-    </ThemedView>
-  );
-}
+      {/* The archive, parked just above the screen until Home is pulled down. */}
+      <Animated.View
+        pointerEvents={archiveOpen ? 'auto' : 'none'}
+        accessibilityElementsHidden={!archiveOpen}
+        importantForAccessibility={archiveOpen ? 'auto' : 'no-hide-descendants'}
+        style={[StyleSheet.absoluteFill, archiveStyle]}>
+        {archiveReady && <ArchiveView onClose={closeArchive} />}
+      </Animated.View>
 
-function MenuItem({ label, onPress }: { label: string; onPress: () => void }) {
-  return (
-    <Pressable
-      accessibilityRole="menuitem"
-      onPress={onPress}
-      style={({ pressed }) => [styles.menuItem, pressed && styles.pressed]}>
-      <ThemedText type="smallBold">{label}</ThemedText>
-    </Pressable>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
+    overflow: 'hidden',
     // Pull-down with a mouse (web preview) shouldn't select text.
     userSelect: 'none',
   },
@@ -273,18 +263,6 @@ const styles = StyleSheet.create({
     height: 36,
     paddingHorizontal: Spacing.three,
     borderRadius: 18,
-  },
-  menu: {
-    position: 'absolute',
-    right: Spacing.four,
-    borderRadius: 16,
-    paddingVertical: Spacing.one,
-    minWidth: 200,
-    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
-  },
-  menuItem: {
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.three,
   },
   mascotArea: {
     flex: 1,

@@ -5,7 +5,8 @@ export const PAPER = '#FFFFFF';
 
 type Props = {
   size: number;
-  imageUri?: string;
+  /** A bundled image (the result of require()). */
+  image?: number;
   /** Shown when there's no image yet (mock data). */
   emoji: string;
   /** Circle on the path, rounded square on detail screens. */
@@ -13,13 +14,18 @@ type Props = {
 };
 
 /** A sketch on paper: the uploaded photo, or the prompt's emoji as a stand-in. */
-export function SketchThumb({ size, imageUri, emoji, shape = 'circle' }: Props) {
+export function SketchThumb({ size, image, emoji, shape = 'circle' }: Props) {
   const radius = shape === 'circle' ? size / 2 : size * 0.08;
 
   return (
     <View style={[styles.paper, { width: size, height: size, borderRadius: radius }]}>
-      {imageUri ? (
-        <Image source={{ uri: imageUri }} style={StyleSheet.absoluteFill} contentFit="cover" />
+      {image ? (
+        // Whole drawing visible: pencil sketches have white paper around them anyway.
+        <Image
+          source={image}
+          style={[StyleSheet.absoluteFill, { margin: size * 0.04 }]}
+          contentFit="contain"
+        />
       ) : (
         <Text style={{ fontSize: size * 0.46, lineHeight: size * 0.6 }}>{emoji}</Text>
       )}

@@ -6,6 +6,8 @@ export type Prompt = {
   text: string;
   /** Stand-in picture used until a real sketch image exists. */
   emoji: string;
+  /** Longer drawing brief, when there is one. */
+  brief?: string;
 };
 
 export const PROMPTS: readonly Prompt[] = [

@@ -49,7 +49,7 @@ Select medium → Get prompt → Sketch → Submit → Feedback → Feed / Profi
 - Over time, reference past sketches so the user *feels improvement* ("your shading is much more confident than last week").
 
 ### 5. After submitting
-1. **Community feed** — sketches from **everyone** for the same prompt, with **friends' sketches shown first**, then everyone else. People react with emojis from a fixed positive set (e.g. ❤️ 🔥 👏 😍 ✨ 🎨). No free-text comments.
+1. **Friends feed** — **friends only** (sketches are never shown to strangers), and **locked until you post your own sketch today** (no peeking first). Shows friends' sketches for the same prompt. People react with emojis from a fixed positive set (e.g. ❤️ 🔥 👏 😍 ✨ 🎨). No free-text comments. Code: call `markPostedToday()` (src/data/today.ts) once a sketch is saved.
 2. **Collection of work** — the user's gallery of every past sketch, so they can look back and see progress.
 3. **Style & drawing-aware analysis** — the feedback above, plus longer-term insights about their style.
 4. **Streaks & streak freezes** — consecutive-day streak, shown prominently; milestones (3, 7, 30 days) are celebrated. Freezes protect a streak on a missed day. A reset should never feel punishing.
@@ -65,10 +65,10 @@ Select medium → Get prompt → Sketch → Submit → Feedback → Feed / Profi
 - **iPhone first.** v1 is designed and built for iPhone only. Don't spend time on iPad layouts until the iPhone app works.
 
 ## Screens (current design, from team notes)
-- **Front page (Home):** today's prompt, animated mascot, one black "+ Snap my sketch" button. Top edge: "Sketch archive" hint (pull down or tap). Top row: streak, date, ••• menu (sketch path, archive).
+- **Front page (Home):** today's prompt, animated mascot, one black "+ Snap my sketch" button. Top edge: "Sketch archive" hint (pull down or tap). Top row: streak and date. The archive's only entry is the top-edge hint / pull-down.
 - **During sketch (session/timer):** pick 2/5/10 min, countdown, Smudge's expression adapts to time left (focus → hurry → proud), haptic nudges at 1 min left and time up (sound later), keeps counting extra time after the timer ends.
 - **After sketch:** scan the paper (main) or photo library → AI feedback → streak, medium/time spent, your drawing, friends' drawings, positive emoji reactions.
-- **Past gallery (archive):** all past sketches with their prompts, as a diagonal card stack; the middle card is fully shown, tap it to enlarge and see reactions/comments. Later: "Spotify Wrapped"-style journey annotations per 7 days, timeframe choice (week/month/year/max).
+- **Past gallery (archive):** lives directly above Home; pulling down drags it in continuously (1:1 with the finger, springs to finish). Past sketches sit along a Duolingo-style S path you scroll (oldest top, newest bottom, newer cards always on top of older). The card nearest the screen middle grows (hover) — tap it to enlarge with reactions. Each week's stats (days sketched, minutes, freezes) sit in the S curve's empty pocket with Smudge. Sample sketches: `mobile/assets/sketches` (see src/data/sketches.ts). Later: timeframe choice (week/month/year/max).
 - **Feature ideas:** draw together with friends; "finish within 2 minutes" modes, speed sketch, sketch-a-thon (to reduce fatigue); streak freezes to reduce friction.
 
 ## Most important for the demo
