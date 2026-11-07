@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { type LayoutChangeEvent, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { Easing, FadeOut, Keyframe, ReduceMotion, useReducedMotion } from 'react-native-reanimated';
@@ -164,27 +164,7 @@ function PostedFeed({
       )}
       <View style={styles.grid}>
         {friends.map((f) => (
-          <Pressable
-            key={f.name}
-            accessibilityRole="button"
-            accessibilityLabel={`${f.name}'s sketch`}
-            onPress={() => onOpenFriend(f)}
-            style={({ pressed }) => pressed && styles.pressedScale}>
-            <ThemedView type="backgroundElement" style={[styles.tile, { width: tile }]}>
-              <SketchThumb size={tile - 16} image={f.image} emoji={promptEmoji} shape="card" />
-              <View style={styles.tileFooter}>
-                <View style={[styles.avatar, { backgroundColor: f.color }]}>
-                  <Text style={styles.avatarText}>{f.initial}</Text>
-                </View>
-                <ThemedText type="smallBold" style={styles.tileName}>
-                  {f.name}
-                </ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  ❤️ {f.counts.reduce((a, b) => a + b, 0)}
-                </ThemedText>
-              </View>
-            </ThemedView>
-          </Pressable>
+          <FriendTile key={f.name} friend={f} tile={tile} emoji={promptEmoji} onOpen={() => onOpenFriend(f)} />
         ))}
       </View>
 
@@ -196,20 +176,68 @@ function PostedFeed({
 }
 
 
+/**
+ * Your reactions to friends' sketches, shared by the feed tiles and the pop-up, so a reaction
+ * you add shows on both and stays after you close the sketch. In memory until the backend.
+ */
+const myReactions = new Map<string, ReadonlySet<Reaction>>();
+const reactionListeners = new Set<() => void>();
+const NO_REACTIONS: ReadonlySet<Reaction> = new Set();
+
+function useMyReactions(friendName: string) {
+  const mine = useSyncExternalStore(
+    (onChange) => {
+      reactionListeners.add(onChange);
+      return () => reactionListeners.delete(onChange);
+    },
+    () => myReactions.get(friendName) ?? NO_REACTIONS,
+    () => NO_REACTIONS
+  );
+  const toggle = (r: Reaction) => {
+    const next = new Set(mine);
+    if (next.has(r)) next.delete(r);
+    else next.add(r);
+    myReactions.set(friendName, next);
+    reactionListeners.forEach((l) => l());
+  };
+  return { mine, toggle };
+}
+
+/** A friend's sketch in the feed grid; its ❤️ total includes your own reactions. */
+function FriendTile({ friend, tile, emoji, onOpen }: { friend: Friend; tile: number; emoji: string; onOpen: () => void }) {
+  const { mine } = useMyReactions(friend.name);
+  const total = friend.counts.reduce((a, b) => a + b, 0) + mine.size;
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${friend.name}'s sketch, ${total} reactions`}
+      onPress={onOpen}
+      style={({ pressed }) => pressed && styles.pressedScale}>
+      <ThemedView type="backgroundElement" style={[styles.tile, { width: tile }]}>
+        <SketchThumb size={tile - 16} image={friend.image} emoji={emoji} shape="card" />
+        <View style={styles.tileFooter}>
+          <View style={[styles.avatar, { backgroundColor: friend.color }]}>
+            <Text style={styles.avatarText}>{friend.initial}</Text>
+          </View>
+          <ThemedText type="smallBold" style={styles.tileName}>
+            {friend.name}
+          </ThemedText>
+          <ThemedText type="small" themeColor={mine.size > 0 ? 'text' : 'textSecondary'}>
+            ❤️ {total}
+          </ThemedText>
+        </View>
+      </ThemedView>
+    </Pressable>
+  );
+}
+
 /** A friend's sketch, popped up, with positive-emoji reactions you can toggle. */
 function FriendSketch({ friend, screenW, onClose }: { friend: Friend; screenW: number; onClose: () => void }) {
   // Fixed width in points (not a %), so the card doesn't change size when its pop-in ends.
   const cardW = Math.min(330, Math.round(screenW * 0.92));
   const theme = useTheme();
-  // Your own reactions (placeholder until the backend).
-  const [mine, setMine] = useState<Set<Reaction>>(new Set());
-  const toggle = (r: Reaction) =>
-    setMine((prev) => {
-      const next = new Set(prev);
-      if (next.has(r)) next.delete(r);
-      else next.add(r);
-      return next;
-    });
+  // Your own reactions: shared with the feed tile, so its total goes up too.
+  const { mine, toggle } = useMyReactions(friend.name);
 
   return (
     <Animated.View exiting={FadeOut.duration(150)} style={styles.layer}>

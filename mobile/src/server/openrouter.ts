@@ -82,6 +82,8 @@ export async function chatJSON(options: {
   maxTokens: number;
   timeoutMs: number;
   temperature?: number;
+  /** How hard the model thinks before answering. Thinking spends max_tokens too, so keep it low. */
+  reasoningEffort?: 'low' | 'medium' | 'high';
 }): Promise<string> {
   let res: Response;
   try {
@@ -97,6 +99,9 @@ export async function chatJSON(options: {
         model: options.model,
         max_tokens: options.maxTokens,
         temperature: options.temperature ?? 0.7,
+        // Quick visual reactions don't need long private reasoning: it slowed replies and,
+        // counted against max_tokens, cut answers off mid-JSON (then the backup model ran too).
+        reasoning: { effort: options.reasoningEffort ?? 'low' },
         messages: [
           { role: 'system', content: options.system },
           { role: 'user', content: options.user },
@@ -130,7 +135,13 @@ export async function chatJSON(options: {
       502,
     );
   }
-  const content = data.choices?.[0]?.message?.content;
+  const choice = data.choices?.[0] as
+    | { message?: { content?: string }; finish_reason?: string; native_finish_reason?: string }
+    | undefined;
+  if (choice?.finish_reason && choice.finish_reason !== 'stop') {
+    console.warn(`[ai] ${options.model} stopped early: ${choice.finish_reason} (${choice.native_finish_reason ?? '-'})`);
+  }
+  const content = choice?.message?.content;
   if (typeof content !== 'string' || !content.trim()) {
     throw new FeedbackFailure('malformed', 'The AI sent back an empty answer.', 502);
   }
@@ -206,6 +217,8 @@ export function extractJSON(content: string): Record<string, unknown> {
     const value = JSON.parse(json ?? '');
     if (value && typeof value === 'object') return value as Record<string, unknown>;
   } catch {}
+  // Usually a reply cut off at max_tokens: the length and ending show it.
+  console.warn(`[ai] unreadable JSON (${content.length} chars), ends: …${content.slice(-80).replace(/\s+/g, ' ')}`);
   throw new FeedbackFailure('malformed', 'The AI sent back something unreadable.', 502);
 }
 

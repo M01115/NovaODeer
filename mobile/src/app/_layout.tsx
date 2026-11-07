@@ -44,7 +44,7 @@ export default function RootLayout() {
             <Stack.Screen name="index" />
             {/* Profile and Puff's wardrobe, opened from the top-right of Home. */}
             <Stack.Screen name="profile" options={{ presentation: 'modal' }} />
-            {/* Sketch session (timer), opened from "+ Snap my sketch". */}
+            {/* Sketch session (timer), opened from "+ Start sketching". */}
             <Stack.Screen name="session" options={{ presentation: 'modal' }} />
             {/* Draw on the phone. Full screen, so a downward stroke can't swipe it away. */}
             <Stack.Screen name="draw" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />

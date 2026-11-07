@@ -179,7 +179,8 @@ export async function analyzeSketch(
       ],
       schemaName: 'sketch_feedback',
       schema: RESPONSE_SCHEMA,
-      maxTokens: 1400,
+      // Headroom so a reply is never cut off (a cut-off reply means a second, slower call).
+      maxTokens: 3000,
       timeoutMs: options.timeoutMs ?? TIMEOUT_MS,
       temperature: 0.85,
     });

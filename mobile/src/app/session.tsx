@@ -55,7 +55,7 @@ function formatClock(totalSeconds: number) {
 }
 
 /**
- * Sketch session, opened from "+ Snap my sketch": pick a time, sketch while Puff
+ * Sketch session, opened from "+ Start sketching": pick a time, sketch while Puff
  * watches, keep going past the timer if you like, then scan the paper.
  */
 export default function SessionScreen() {
@@ -267,7 +267,7 @@ export default function SessionScreen() {
       <View style={styles.actions}>
         {phase === 'setup' && (
           <>
-            <PrimaryButton label="Start sketching" onPress={start} sound="session-start" />
+            <PrimaryButton label="Draw anywhere" onPress={start} sound="session-start" />
             <SecondaryButton label="✏️  Draw on my phone" onPress={() => router.replace('/draw')} />
           </>
         )}

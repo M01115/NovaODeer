@@ -228,7 +228,7 @@ export default function HomeScreen() {
         </ThemedText>
       </View>
 
-      <ChunkyButton label="Snap my sketch" icon="+" onPress={() => router.push('/session')} />
+      <ChunkyButton label="Start sketching" icon="+" onPress={() => router.push('/session')} />
     </View>
   );
 
