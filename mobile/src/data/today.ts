@@ -1,18 +1,26 @@
 import { useSyncExternalStore } from 'react';
 
+import type { SketchAnalysis } from '@/data/feedback';
+
 /**
  * Today's posted sketch. The friends feed stays locked until there is one.
  * In-memory for now (resets when the app restarts); the backend will own this later.
- * Whoever builds scanning/upload should call `markPostedToday()` once the sketch is saved,
- * passing the image and Puff's feedback when they exist.
+ * Called by the feedback screen (src/app/feedback.tsx) when the user posts their scanned
+ * sketch, with the image and Puff's AI feedback.
  */
 export type PostedSketch = {
+  /** Stable id: today's date key (YYYY-MM-DD). */
+  id?: string;
   /** Seconds spent sketching (from the timer). */
   seconds: number;
-  /** The sketch image: a file/data URI (drawn in the app) or a bundled module. */
+  /** The scanned/uploaded image: a data/file URI, or a bundled module (require()). */
   image?: number | string;
   /** Puff's feedback on the sketch (from the AI). */
   feedback?: string;
+  /** How it was made: photographed paper, or uploaded from photos. */
+  medium?: 'paper' | 'upload';
+  /** Smudge's structured analysis (2 compliments + 1 tip, with annotation boxes). */
+  analysis?: SketchAnalysis;
 };
 
 let posted: PostedSketch | null = null;

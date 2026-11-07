@@ -249,7 +249,8 @@ const played = new WeakSet<PostedSketch>();
  */
 function useFeedbackMoment(posted: PostedSketch, text: string) {
   const reduced = useReducedMotion();
-  const first = !played.has(posted) && !reduced;
+  // Skipped when the sketch already got live AI feedback on the feedback screen.
+  const first = !played.has(posted) && !reduced && !posted.analysis;
   const [mood, setMood] = useState<SmudgeMood>(first ? 'squint' : 'happy');
   const [typed, setTyped] = useState<number | null>(first ? null : text.length);
   const [waitLine, setWaitLine] = useState('Ooh, let me take a close look…');

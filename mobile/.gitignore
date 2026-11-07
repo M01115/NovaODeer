@@ -41,3 +41,8 @@ example
 # generated native folders
 /ios
 /android
+
+# Output of scripts/eval-feedback.mjs
+eval-out/
+# Cached AI weekly reflections (server-side)
+.cache/

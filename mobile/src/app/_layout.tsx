@@ -7,6 +7,7 @@ import {
   Nunito_900Black,
   useFonts,
 } from '@expo-google-fonts/nunito';
+import { PatrickHand_400Regular } from '@expo-google-fonts/patrick-hand';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -30,6 +31,8 @@ export default function RootLayout() {
     Nunito_900Black,
     // Puff Hand, the mascot's display font (components/puff-text.tsx).
     ...PUFF_FONTS,
+    // The mascot's handwriting (see constants/handwriting.ts).
+    PatrickHand_400Regular,
   });
   if (!fontsLoaded) return null;
 
@@ -45,6 +48,8 @@ export default function RootLayout() {
             <Stack.Screen name="session" options={{ presentation: 'modal' }} />
             {/* Draw on the phone. Full screen, so a downward stroke can't swipe it away. */}
             <Stack.Screen name="draw" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
+            {/* Scanned sketch → Puff's AI feedback → post, opened from the session. */}
+            <Stack.Screen name="feedback" options={{ presentation: 'modal' }} />
             {/* Streak completion, right after posting today's sketch. */}
             <Stack.Screen
               name="complete"

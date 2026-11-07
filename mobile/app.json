@@ -20,7 +20,7 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "output": "single",
+      "output": "server",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
@@ -34,6 +34,13 @@
         }
       ],
       "expo-audio",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Puff needs the camera to scan your paper sketch.",
+          "photosPermission": "Pick a sketch you drew somewhere else."
+        }
+      ],
       "expo-asset"
     ],
     "experiments": {

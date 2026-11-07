@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { CloseButton } from '@/components/close-button';
 import { Screen } from '@/components/screen';
@@ -10,7 +10,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Ink, nunito, Spacing } from '@/constants/theme';
 import { DEFAULT_SECONDS, formatDuration, getPromptForDate } from '@/data/prompts';
-import { markPostedToday } from '@/data/today';
+import { PICK_ERRORS, pickSketch } from '@/data/submission';
 import { ChunkyButton } from '@/components/chunky-button';
 import { useTheme } from '@/hooks/use-theme';
 import { playSound, type SoundId } from '@/lib/sounds';
@@ -18,13 +18,17 @@ import { playSound, type SoundId } from '@/lib/sounds';
 type Phase = 'setup' | 'running' | 'paused' | 'done';
 
 /**
- * Stand-in for scanning/uploading (being built separately): counts as posting today's
- * sketch, which unlocks the friends feed. Replace with the real scan flow.
+ * Scan the paper (camera) or pick a photo, then open Smudge's feedback screen. Posting
+ * (markPostedToday → streak completion → feed) happens there, after the AI feedback.
  */
-function postSketch(seconds: number) {
-  markPostedToday({ seconds });
-  // Celebrate first (streak bar fills), then on to the Feed.
-  router.replace('/complete');
+async function scanSketch(source: 'camera' | 'library', seconds: number) {
+  const picked = await pickSketch(source, Math.round(seconds));
+  if (picked.ok) {
+    router.push('/feedback');
+    return;
+  }
+  const message = PICK_ERRORS[picked.reason];
+  if (message) Alert.alert('Hmm', message);
 }
 
 function haptic(kind: 'warning' | 'success') {
@@ -266,8 +270,12 @@ export default function SessionScreen() {
 
         {phase === 'done' && (
           <>
-            <PrimaryButton label="📷  Scan my sketch" onPress={() => postSketch(elapsed)} sound="snap" />
-            <SecondaryButton label="Choose from photos" onPress={() => postSketch(elapsed)} sound="snap" />
+            <PrimaryButton label="📷  Scan my sketch" onPress={() => scanSketch('camera', elapsed)} sound="snap" />
+            <SecondaryButton
+              label="Choose from photos"
+              onPress={() => scanSketch('library', elapsed)}
+              sound="snap"
+            />
             <Pressable
               accessibilityRole="button"
               onPress={() => router.back()}

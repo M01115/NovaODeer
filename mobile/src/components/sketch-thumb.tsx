@@ -5,7 +5,7 @@ export const PAPER = '#FFFFFF';
 
 type Props = {
   size: number;
-  /** A bundled image (the result of require()) or an image URI (e.g. a sketch drawn in the app). */
+  /** A bundled image (require()), or a URI: a scanned/uploaded sketch or one drawn in the app. */
   image?: number | string;
   /** Shown when there's no image yet (mock data). */
   emoji: string;

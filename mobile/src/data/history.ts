@@ -1,3 +1,4 @@
+import type { SketchFeedback } from '@/data/feedback';
 import { getPromptForDate, type Prompt } from '@/data/prompts';
 import { SAMPLE_SKETCHES } from '@/data/sketches';
 
@@ -22,10 +23,12 @@ export type Day = {
   date: string;
   prompt: Prompt;
   status: DayStatus;
-  /** The sketch image (sample sketches for now; uploads later). Falls back to the prompt emoji. */
-  image?: number;
+  /** The sketch image: a bundled sample, or today's scanned/uploaded sketch (URI). Falls back to the prompt emoji. */
+  image?: number | string;
   /** Puff's feedback on the sketch. */
   feedback?: string;
+  /** Smudge's structured AI feedback (2 compliments + 1 tip), when the sketch was analyzed. */
+  analysis?: SketchFeedback;
   /** Minutes spent sketching (from the timer). */
   minutes?: number;
 };
