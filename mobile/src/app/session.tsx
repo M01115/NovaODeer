@@ -9,11 +9,10 @@ import { Smudge, type SmudgeMood } from '@/components/smudge';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Ink, Spacing } from '@/constants/theme';
-import { getPromptForDate } from '@/data/prompts';
+import { DEFAULT_SECONDS, formatDuration, getPromptForDate } from '@/data/prompts';
 import { markPostedToday } from '@/data/today';
 import { useTheme } from '@/hooks/use-theme';
 
-const DURATIONS = [2, 5, 10]; // minutes
 type Phase = 'setup' | 'running' | 'paused' | 'done';
 
 /**
@@ -48,7 +47,6 @@ export default function SessionScreen() {
   const theme = useTheme();
   const prompt = useMemo(() => getPromptForDate(), []);
 
-  const [minutes, setMinutes] = useState(5);
   const [phase, setPhase] = useState<Phase>('setup');
   // Elapsed time is tracked from timestamps so it stays accurate if the app stalls.
   const [elapsedBefore, setElapsedBefore] = useState(0); // ms banked before the current run
@@ -62,7 +60,8 @@ export default function SessionScreen() {
   }, [phase]);
 
   const elapsed = (elapsedBefore + (runStartedAt ? now - runStartedAt : 0)) / 1000;
-  const total = minutes * 60;
+  // The time comes with the prompt (30s / 2 min / 5 min by difficulty); users don't choose.
+  const total = prompt.seconds ?? DEFAULT_SECONDS;
   const remaining = total - elapsed;
   const overtime = elapsed > total;
 
@@ -104,7 +103,10 @@ export default function SessionScreen() {
   };
 
   let mood: SmudgeMood = 'happy';
-  let line = 'Ready when you are. Grab any paper and a pencil!';
+  let line =
+    total <= 30
+      ? 'A quick one! Thirty seconds, just the big shapes.'
+      : `Ready when you are. ${formatDuration(total)}, any paper and a pencil!`;
   if (phase === 'running' || phase === 'paused') {
     if (overtime) {
       mood = 'proud';
@@ -149,32 +151,6 @@ export default function SessionScreen() {
 
       {/* Timer */}
       <View style={styles.timerBlock}>
-        {phase === 'setup' ? (
-          <View style={styles.chips}>
-            {DURATIONS.map((m) => (
-              <Pressable
-                key={m}
-                accessibilityRole="radio"
-                accessibilityState={{ selected: minutes === m }}
-                onPress={() => setMinutes(m)}
-                style={[
-                  styles.chip,
-                  minutes === m
-                    ? { backgroundColor: theme.text }
-                    : { backgroundColor: theme.backgroundElement },
-                ]}>
-                <Text
-                  style={[
-                    styles.chipText,
-                    { color: minutes === m ? theme.background : theme.text },
-                  ]}>
-                  {m} min
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        ) : null}
-
         <Text
           style={[styles.clock, { color: overtime && phase !== 'done' ? Ink.red : theme.text }]}
           accessibilityLabel={
@@ -190,7 +166,7 @@ export default function SessionScreen() {
         </Text>
         <ThemedText type="small" themeColor="textSecondary">
           {phase === 'setup'
-            ? 'Pick your time'
+            ? `today’s time · ${total <= 30 ? 'quick sketch' : total <= 120 ? 'short sketch' : 'longer sketch'}`
             : phase === 'done'
               ? 'sketched — nice work'
               : overtime
@@ -309,20 +285,6 @@ const styles = StyleSheet.create({
   timerBlock: {
     alignItems: 'center',
     gap: Spacing.one,
-  },
-  chips: {
-    flexDirection: 'row',
-    gap: Spacing.two,
-    marginBottom: Spacing.two,
-  },
-  chip: {
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
-    borderRadius: 18,
-  },
-  chipText: {
-    fontSize: 14,
-    fontWeight: 700,
   },
   clock: {
     fontSize: 72,

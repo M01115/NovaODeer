@@ -19,7 +19,6 @@ import { scheduleOnRN } from 'react-native-worklets';
 
 import { SketchThumb } from '@/components/sketch-thumb';
 import { Smudge } from '@/components/smudge';
-import { BottomTabInset } from '@/constants/theme';
 import { formatShortDate, fromDateKey, getHistory, getWeekStats, toDateKey, type Day } from '@/data/history';
 import { REACTIONS } from '@/data/reactions';
 
@@ -54,7 +53,7 @@ type Placed = { day: Day; index: number; week: number; x: number; y: number };
 
 /**
 
- * Lives directly above Home: Home's pull-down drags it into view (see (tabs)/index.tsx).
+ * Lives directly above Home: Home's pull-down drags it into view (see app/index.tsx).
  *
  * The sketch archive, laid out like Duolingo's path: sketches sit along a winding S path
  * you scroll through (oldest at the top, newest at the bottom), swinging almost edge to
@@ -227,7 +226,7 @@ export function ArchiveView({ onClose }: { onClose: () => void }) {
         hitSlop={8}
         style={({ pressed }) => [
           styles.todayPill,
-          { bottom: insets.bottom + BottomTabInset + 16 },
+          { bottom: insets.bottom + 16 },
           pressed && styles.pressed,
         ]}>
         <Text style={styles.todayText}>︿  Back to today</Text>

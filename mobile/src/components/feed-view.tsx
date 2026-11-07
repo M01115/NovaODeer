@@ -1,9 +1,8 @@
-import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { type LayoutChangeEvent, Pressable, StyleSheet, Text, View } from 'react-native';
+import { type LayoutChangeEvent, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { Easing, FadeOut, Keyframe, ReduceMotion } from 'react-native-reanimated';
 
-import { Screen } from '@/components/screen';
 import { SketchThumb } from '@/components/sketch-thumb';
 import { Smudge } from '@/components/smudge';
 import { ThemedText } from '@/components/themed-text';
@@ -12,7 +11,7 @@ import { Spacing } from '@/constants/theme';
 import { getPromptForDate } from '@/data/prompts';
 import { REACTIONS, type Reaction } from '@/data/reactions';
 import { SAMPLE_SKETCHES } from '@/data/sketches';
-import { type PostedSketch, usePostedToday } from '@/data/today';
+import { type PostedSketch } from '@/data/today';
 import { useTheme } from '@/hooks/use-theme';
 
 /**
@@ -44,42 +43,41 @@ function formatTime(seconds: number) {
 }
 
 /**
- * Friends feed for today's prompt.
- * - Locked until you post your own sketch today (no peeking first).
- * - Once posted: your sketch on top, Smudge's feedback beside him, then your friends'
- *   sketches in a 2×2 grid. Friends only: sketches are never shown to strangers.
- * - Reactions are a fixed set of positive emojis; no text comments.
+ * The feed, shown on Home once today's sketch is posted (before that, Home shows the
+ * prompt). Your sketch with friends' reactions, Smudge's feedback beside him, then your
+ * friends' sketches in a 2×2 grid. Friends only: sketches are never shown to strangers.
+ * Reactions are a fixed set of positive emojis; no text comments.
  */
-export default function FeedScreen() {
-  const posted = usePostedToday();
+export function FeedView({ posted }: { posted: PostedSketch }) {
+  const insets = useSafeAreaInsets();
   const prompt = useMemo(() => getPromptForDate(), []);
   const [width, setWidth] = useState(0);
   const [open, setOpen] = useState<Friend | null>(null);
 
   return (
     <View style={styles.root}>
-      <Screen>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + Spacing.four }]}>
         <View onLayout={(e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width)}>
-          <ThemedText type="subtitle">Friends</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            Today’s prompt: {prompt.text}
+            Today’s prompt
+          </ThemedText>
+          <ThemedText type="smallBold" style={styles.promptTitle}>
+            {prompt.text}
           </ThemedText>
         </View>
 
-        {posted ? (
-          width > 0 && (
-            <PostedFeed
-              posted={posted}
-              promptText={prompt.text}
-              promptEmoji={prompt.emoji}
-              width={width}
-              onOpenFriend={setOpen}
-            />
-          )
-        ) : (
-          <LockedFeed />
+        {width > 0 && (
+          <PostedFeed
+            posted={posted}
+            promptText={prompt.text}
+            promptEmoji={prompt.emoji}
+            width={width}
+            onOpenFriend={setOpen}
+          />
         )}
-      </Screen>
+      </ScrollView>
 
       {open && <FriendSketch friend={open} onClose={() => setOpen(null)} />}
     </View>
@@ -173,30 +171,6 @@ function PostedFeed({
   );
 }
 
-function LockedFeed() {
-  const theme = useTheme();
-  return (
-    <ThemedView type="backgroundElement" style={styles.locked}>
-      <Smudge size={96} mood="focus" animated />
-      <ThemedText type="smallBold" style={styles.center}>
-        Post today’s sketch to see your friends’
-      </ThemedText>
-      <ThemedText type="small" themeColor="textSecondary" style={styles.center}>
-        {FRIENDS.length} friends have sketched today. No peeking until you’ve drawn yours!
-      </ThemedText>
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => router.push('/session')}
-        style={({ pressed }) => [
-          styles.cta,
-          { backgroundColor: theme.text },
-          pressed && styles.pressedScale,
-        ]}>
-        <Text style={[styles.ctaText, { color: theme.background }]}>+  Snap my sketch</Text>
-      </Pressable>
-    </ThemedView>
-  );
-}
 
 /** A friend's sketch, popped up, with positive-emoji reactions you can toggle. */
 function FriendSketch({ friend, onClose }: { friend: Friend; onClose: () => void }) {
@@ -254,6 +228,15 @@ function FriendSketch({ friend, onClose }: { friend: Friend; onClose: () => void
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+  },
+  content: {
+    paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.two,
+    gap: Spacing.four,
+  },
+  promptTitle: {
+    fontSize: 20,
+    lineHeight: 26,
   },
   center: {
     textAlign: 'center',

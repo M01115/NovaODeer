@@ -16,12 +16,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { ArchiveView } from '@/components/archive-view';
+import { FeedView } from '@/components/feed-view';
 import { Smudge } from '@/components/smudge';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { onArchiveRequest } from '@/data/archive-events';
-import { formatShortDate, getHistory, getStreak, toDateKey } from '@/data/history';
+import { getHistory, getStreak } from '@/data/history';
+import { DEFAULT_SECONDS, formatDuration, sayDuration } from '@/data/prompts';
+import { usePostedToday } from '@/data/today';
 import { useTheme } from '@/hooks/use-theme';
 
 // The streak screen shows once per app launch (resets when the app restarts).
@@ -33,9 +36,11 @@ const OPEN_VELOCITY = 700;
 /** Distance over which the top-edge hint wakes up. */
 const HINT_DISTANCE = 70;
 
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
 /**
+ * The one main screen. Before today's sketch is posted it shows the prompt; after, it
+ * becomes the feed (your sketch, Smudge's feedback, friends' sketches). Smudge is always on
+ * screen. Profile opens from the top-right corner.
+ *
  * Home is all about today's prompt. The sketch archive sits directly above it, in the same
  * screen: pulling down drags Home down and the archive in, 1:1 with the finger, and letting
  * go springs the rest of the way (or back) carrying the finger's speed. One continuous move.
@@ -45,11 +50,12 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
 
+  const posted = usePostedToday();
   const days = useMemo(() => getHistory(), []);
-  const streak = getStreak(days);
+  const streak = getStreak(days) + (posted ? 1 : 0);
   const today = days.find((d) => d.status === 'today');
-  const now = new Date();
-  const dateLabel = `${WEEKDAYS[now.getDay()]}, ${formatShortDate(toDateKey(now))}`;
+  // Each prompt comes with its own time (30s / 2 min / 5 min, by difficulty).
+  const seconds = today?.prompt.seconds ?? DEFAULT_SECONDS;
 
   // On landing, celebrate the streak first.
   useFocusEffect(
@@ -134,83 +140,112 @@ export default function HomeScreen() {
     screenH.set(e.nativeEvent.layout.height);
   };
 
+  const header = (
+    <View style={[styles.header, { paddingTop: insets.top + Spacing.one }]}>
+      <View style={styles.hintRow}>
+        {/* Streak, top left */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${streak} day streak`}
+          onPress={() => router.push('/streak')}
+          style={({ pressed }) => [styles.streakButton, pressed && styles.pressed]}>
+          <ThemedView type="backgroundElement" style={styles.pill}>
+            <ThemedText type="smallBold">🔥 {streak}</ThemedText>
+          </ThemedView>
+        </Pressable>
+
+        {/* Archive hint on the top edge; pull down or tap. */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Open sketch archive"
+          accessibilityHint="Or pull down"
+          onPress={openArchive}
+          hitSlop={10}
+          style={styles.archiveHint}>
+          <Animated.View style={[styles.archiveHintInner, hintStyle]}>
+            <ThemedText type="small" themeColor="textSecondary">
+              Sketch archive
+            </ThemedText>
+            <Text style={[styles.archiveArrow, { color: theme.text }]}>﹀</Text>
+          </Animated.View>
+        </Pressable>
+
+        {/* Profile, top right: Smudge's face in his current outfit. */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Profile"
+          onPress={() => router.push('/profile')}
+          style={({ pressed }) => [styles.profileButton, pressed && styles.pressed]}>
+          <ThemedView type="backgroundElement" style={styles.profileInner}>
+            <Smudge size={34} />
+          </ThemedView>
+        </Pressable>
+      </View>
+    </View>
+  );
+
+  // Before posting: today's prompt, with Smudge cheering you on.
+  const promptBody = (
+    <View style={[styles.promptBody, { paddingBottom: insets.bottom + Spacing.four }]}>
+      <View style={styles.mascotArea}>
+        <Smudge size={150} animated />
+        <ThemedView type="backgroundElement" style={styles.bubble}>
+          <ThemedText type="small" style={styles.center}>
+            Morning! {sayDuration(seconds)}, any paper. You’ve got this.
+          </ThemedText>
+        </ThemedView>
+      </View>
+
+      <ThemedView type="backgroundElement" style={styles.promptCard}>
+        <View style={styles.promptMeta}>
+          <ThemedText type="small" themeColor="textSecondary">
+            Today’s prompt
+          </ThemedText>
+          <ThemedView style={styles.timeBadge}>
+            <ThemedText type="smallBold">⏱ {formatDuration(seconds)}</ThemedText>
+          </ThemedView>
+        </View>
+        <ThemedText type="subtitle" style={styles.promptText}>
+          {today?.prompt.text}
+        </ThemedText>
+      </ThemedView>
+
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => router.push('/session')}
+        style={({ pressed }) => [
+          styles.primaryButton,
+          { backgroundColor: theme.text },
+          pressed && styles.primaryPressed,
+        ]}>
+        <Text style={[styles.plus, { color: theme.background }]}>+</Text>
+        <ThemedText style={[styles.primaryLabel, { color: theme.background }]}>
+          Snap my sketch
+        </ThemedText>
+      </Pressable>
+    </View>
+  );
+
   return (
     <ThemedView style={styles.screen} onLayout={onScreenLayout}>
-      <GestureDetector gesture={pan}>
-        <Animated.View
-          style={[
-            styles.page,
-            {
-              paddingTop: insets.top + Spacing.one,
-              paddingBottom: insets.bottom + BottomTabInset + Spacing.four,
-            },
-            pageStyle,
-          ]}>
-          {/* Archive hint on the top edge; pull down or tap. */}
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Open sketch archive"
-            accessibilityHint="Or pull down"
-            onPress={openArchive}
-            hitSlop={10}
-            style={styles.archiveHint}>
-            <Animated.View style={[styles.archiveHintInner, hintStyle]}>
-              <ThemedText type="small" themeColor="textSecondary">
-                Sketch archive
-              </ThemedText>
-              <Text style={[styles.archiveArrow, { color: theme.text }]}>﹀</Text>
-            </Animated.View>
-          </Pressable>
-
-          <View style={styles.topBar}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`${streak} day streak`}
-              onPress={() => router.push('/streak')}
-              style={({ pressed }) => pressed && styles.pressed}>
-              <ThemedView type="backgroundElement" style={styles.pill}>
-                <ThemedText type="smallBold">🔥 {streak}</ThemedText>
-              </ThemedView>
-            </Pressable>
-
-            <ThemedText type="smallBold" themeColor="textSecondary">
-              {dateLabel}
-            </ThemedText>
-          </View>
-
-          <View style={styles.mascotArea}>
-            <Smudge size={150} animated />
-            <ThemedView type="backgroundElement" style={styles.bubble}>
-              <ThemedText type="small" style={styles.center}>
-                Morning! Five minutes, any paper. You’ve got this.
-              </ThemedText>
-            </ThemedView>
-          </View>
-
-          <ThemedView type="backgroundElement" style={styles.promptCard}>
-            <ThemedText type="small" themeColor="textSecondary">
-              Today’s prompt
-            </ThemedText>
-            <ThemedText type="subtitle" style={styles.promptText}>
-              {today?.prompt.text}
-            </ThemedText>
-          </ThemedView>
-
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => router.push('/session')}
-            style={({ pressed }) => [
-              styles.primaryButton,
-              { backgroundColor: theme.text },
-              pressed && styles.primaryPressed,
-            ]}>
-            <Text style={[styles.plus, { color: theme.background }]}>+</Text>
-            <ThemedText style={[styles.primaryLabel, { color: theme.background }]}>
-              Snap my sketch
-            </ThemedText>
-          </Pressable>
-        </Animated.View>
-      </GestureDetector>
+      <Animated.View style={[styles.page, pageStyle]}>
+        {posted ? (
+          // After posting the page scrolls (the feed), so only the header pulls the archive down.
+          <>
+            <GestureDetector gesture={pan}>
+              <View>{header}</View>
+            </GestureDetector>
+            <FeedView posted={posted} />
+          </>
+        ) : (
+          <GestureDetector gesture={pan}>
+            <View style={styles.page}>
+              {header}
+              {promptBody}
+            </View>
+          </GestureDetector>
+        )}
+      </Animated.View>
 
       {/* The archive, parked just above the screen until Home is pulled down. */}
       <Animated.View
@@ -220,7 +255,6 @@ export default function HomeScreen() {
         style={[StyleSheet.absoluteFill, archiveStyle]}>
         {archiveReady && <ArchiveView onClose={closeArchive} />}
       </Animated.View>
-
     </ThemedView>
   );
 }
@@ -237,12 +271,42 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
+  },
+  header: {
+    paddingHorizontal: Spacing.four,
+    gap: Spacing.three,
+    paddingBottom: Spacing.three,
+  },
+  hintRow: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+  },
+  streakButton: {
+    position: 'absolute',
+    left: 0,
+    top: 4,
+  },
+  profileButton: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+  },
+  profileInner: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  promptBody: {
+    flex: 1,
     paddingHorizontal: Spacing.four,
     gap: Spacing.four,
   },
   archiveHint: {
     alignSelf: 'center',
-    marginBottom: -Spacing.two,
   },
   archiveHintInner: {
     alignItems: 'center',
@@ -285,6 +349,16 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     minHeight: 150,
     justifyContent: 'center',
+  },
+  promptMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  timeBadge: {
+    paddingHorizontal: Spacing.two + 2,
+    paddingVertical: 2,
+    borderRadius: 10,
   },
   promptText: {
     lineHeight: 40,

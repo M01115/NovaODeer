@@ -115,7 +115,7 @@ export default function CompleteScreen() {
           <Text style={styles.cheer}>Smudge is doing a happy wiggle. See what your friends drew!</Text>
           <Pressable
             accessibilityRole="button"
-            onPress={() => router.dismissTo('/feed')}
+            onPress={() => router.dismissTo('/')}
             style={({ pressed }) => [styles.button, pressed && styles.pressed]}>
             <Text style={styles.buttonText}>SEE FRIENDS’ SKETCHES</Text>
           </Pressable>
