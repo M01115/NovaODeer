@@ -81,6 +81,9 @@ Every file in `src/app/` is a screen (Expo Router). Keep other code outside it.
 
 ## Before you push
 
+On a fresh clone, run `npx expo start` once first: it generates `expo-env.d.ts` (git-ignored),
+which the type check needs.
+
 ```bash
 npx tsc --noEmit
 npx expo lint
