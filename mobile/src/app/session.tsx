@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { CloseButton } from '@/components/close-button';
 import { Screen } from '@/components/screen';
@@ -20,10 +20,10 @@ type Phase = 'setup' | 'running' | 'paused' | 'done';
  * Stand-in for scanning/uploading (being built separately): counts as posting today's
  * sketch, which unlocks the friends feed. Replace with the real scan flow.
  */
-function postSketch(via: string) {
-  markPostedToday();
-  Alert.alert('Posted!', `${via} isn't built yet, but today counts as posted. Your friends' sketches are unlocked in Feed.`);
-  router.back();
+function postSketch(seconds: number) {
+  markPostedToday({ seconds });
+  // Celebrate first (streak bar fills), then on to the Feed.
+  router.replace('/complete');
 }
 
 function haptic(kind: 'warning' | 'success') {
@@ -228,8 +228,8 @@ export default function SessionScreen() {
 
         {phase === 'done' && (
           <>
-            <PrimaryButton label="📷  Scan my sketch" onPress={() => postSketch('Scanning')} />
-            <SecondaryButton label="Choose from photos" onPress={() => postSketch('Photo library')} />
+            <PrimaryButton label="📷  Scan my sketch" onPress={() => postSketch(elapsed)} />
+            <SecondaryButton label="Choose from photos" onPress={() => postSketch(elapsed)} />
             <Pressable
               accessibilityRole="button"
               onPress={() => router.back()}

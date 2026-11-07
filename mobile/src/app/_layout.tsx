@@ -19,6 +19,11 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" />
             {/* Sketch session (timer), opened from "+ Snap my sketch". */}
             <Stack.Screen name="session" options={{ presentation: 'modal' }} />
+            {/* Streak completion, right after posting today's sketch. */}
+            <Stack.Screen
+              name="complete"
+              options={{ presentation: 'fullScreenModal', animation: 'fade' }}
+            />
             {/* Streak celebration, shown once when the app opens. */}
             <Stack.Screen
               name="streak"

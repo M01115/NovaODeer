@@ -1,16 +1,25 @@
 import { useSyncExternalStore } from 'react';
 
 /**
- * Whether the user has posted today's sketch. The friends feed stays locked until then.
+ * Today's posted sketch. The friends feed stays locked until there is one.
  * In-memory for now (resets when the app restarts); the backend will own this later.
- * Whoever builds scanning/upload should call `markPostedToday()` once the sketch is saved.
+ * Whoever builds scanning/upload should call `markPostedToday()` once the sketch is saved,
+ * passing the image and Smudge's feedback when they exist.
  */
-let postedToday = false;
+export type PostedSketch = {
+  /** Seconds spent sketching (from the timer). */
+  seconds: number;
+  /** The scanned/uploaded image (a URI or bundled module). Not available yet. */
+  image?: number;
+  /** Smudge's feedback on the sketch (from the AI). */
+  feedback?: string;
+};
+
+let posted: PostedSketch | null = null;
 const listeners = new Set<() => void>();
 
-export function markPostedToday() {
-  if (postedToday) return;
-  postedToday = true;
+export function markPostedToday(sketch: PostedSketch) {
+  posted = sketch;
   listeners.forEach((l) => l());
 }
 
@@ -19,10 +28,11 @@ function subscribe(listener: () => void) {
   return () => listeners.delete(listener);
 }
 
+/** Today's posted sketch, or null if not posted yet. */
 export function usePostedToday() {
   return useSyncExternalStore(
     subscribe,
-    () => postedToday,
-    () => false
+    () => posted,
+    () => null
   );
 }
