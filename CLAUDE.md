@@ -64,6 +64,19 @@ Select medium → Get prompt → Sketch → Submit → Feedback → Feed / Profi
 - **Low friction.** Opening the app → sketching → submitting → feedback should take as few taps as possible.
 - **iPhone first.** v1 is designed and built for iPhone only. Don't spend time on iPad layouts until the iPhone app works.
 
+## Screens (current design, from team notes)
+- **Front page (Home):** today's prompt, animated mascot, one black "+ Snap my sketch" button. Top edge: "Sketch archive" hint (pull down or tap). Top row: streak, date, ••• menu (sketch path, archive).
+- **During sketch (session/timer):** pick 2/5/10 min, countdown, Smudge's expression adapts to time left (focus → hurry → proud), haptic nudges at 1 min left and time up (sound later), keeps counting extra time after the timer ends.
+- **After sketch:** scan the paper (main) or photo library → AI feedback → streak, medium/time spent, your drawing, friends' drawings, positive emoji reactions.
+- **Past gallery (archive):** all past sketches with their prompts, as a diagonal card stack; the middle card is fully shown, tap it to enlarge and see reactions/comments. Later: "Spotify Wrapped"-style journey annotations per 7 days, timeframe choice (week/month/year/max).
+- **Feature ideas:** draw together with friends; "finish within 2 minutes" modes, speed sketch, sketch-a-thon (to reduce fatigue); streak freezes to reduce friction.
+
+## Most important for the demo
+1. Mascot animation on the main page.
+2. Sketch button leads to the timer page.
+3. Live demo on paper by the judges.
+4. Scan the paper and get live AI feedback.
+
 ## Team & ownership
 - 4-person team. `main` stays working; each person works on `<name>/<feature>` branches and merges via pull request with one teammate's review (see README.md).
 - Workstreams:

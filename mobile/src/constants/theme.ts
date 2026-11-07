@@ -7,14 +7,16 @@ import '@/global.css';
 
 import { Platform } from 'react-native';
 
+// Paper-and-ink palette: warm off-white paper, black ink, pencil greys.
 export const Colors = {
   light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
+    text: '#161616',
+    background: '#F6F5F1',
+    backgroundElement: '#ECEAE4',
+    backgroundSelected: '#DCD9D1',
+    textSecondary: '#8A877F',
   },
+  // Unused while the app is light-only (see hooks/use-color-scheme.ts).
   dark: {
     text: '#ffffff',
     background: '#000000',
@@ -23,6 +25,17 @@ export const Colors = {
     textSecondary: '#B0B4BA',
   },
 } as const;
+
+/** Ink accents shared by the path, popovers and buttons. */
+export const Ink = {
+  ink: '#161616',
+  inkLip: '#000000',
+  pencil: '#B9B5AC',
+  paper: '#FFFFFF',
+  paperLip: '#D4D0C6',
+  /** The one spot colour, used sparingly (streak flame, today). */
+  red: '#E5483B',
+};
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
@@ -62,6 +75,4 @@ export const Spacing = {
 } as const;
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
-/** Web shows the tab bar floating at the top; native tabs sit at the bottom. */
-export const TopTabInset = Platform.select({ web: 64 }) ?? 0;
 export const MaxContentWidth = 800;
