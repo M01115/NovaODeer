@@ -134,10 +134,10 @@ const styles = StyleSheet.create({
   },
   flame: {
     position: 'absolute',
-    right: -18,
-    top: 4,
+    left: -22,
+    top: -8,
     fontSize: 46,
-    transform: [{ rotate: '12deg' }],
+    transform: [{ rotate: '-12deg' }],
   },
   number: {
     color: C.ink,

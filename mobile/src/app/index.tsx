@@ -188,7 +188,7 @@ export default function HomeScreen() {
   const promptBody = (
     <View style={[styles.promptBody, { paddingBottom: insets.bottom + Spacing.four }]}>
       <View style={styles.mascotArea}>
-        <Smudge size={150} animated />
+        <Smudge size={200} animated />
         <ThemedView type="backgroundElement" style={styles.bubble}>
           <ThemedText type="small" style={styles.center}>
             Morning! {sayDuration(seconds)}, any paper. You’ve got this.

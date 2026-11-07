@@ -1,24 +1,25 @@
 import { useSyncExternalStore } from 'react';
 
 /**
- * Smudge's look: what he's wearing and his pencil colour. Shown everywhere Smudge appears.
+ * The mascot's look: which of his accessories he's wearing. Shown everywhere he appears.
+ * The accessories are layers from the team's mascot PSD (assets/mascot). To add more, draw
+ * them as new layers in the same PSD, export, and add them here and in components/smudge.tsx.
  * In-memory for now (resets when the app restarts); save it to the backend later.
  */
-export type Hat = 'none' | 'beret' | 'beanie' | 'party' | 'crown';
-export type Eyewear = 'none' | 'round' | 'shades';
-export type Neckwear = 'none' | 'scarf' | 'bowtie';
-export type BodyColor = 'graphite' | 'blue' | 'red' | 'sage';
+export type Hat = 'none' | 'beret';
+export type Eyewear = 'none' | 'glasses';
+export type Hold = 'none' | 'brush';
 
 export type Outfit = {
   hat: Hat;
   eyes: Eyewear;
-  neck: Neckwear;
-  color: BodyColor;
+  hold: Hold;
 };
 
 export type Slot = keyof Outfit;
 
-export const DEFAULT_OUTFIT: Outfit = { hat: 'none', eyes: 'none', neck: 'none', color: 'graphite' };
+/** As drawn: striped beret, glasses and his paintbrush. */
+export const DEFAULT_OUTFIT: Outfit = { hat: 'beret', eyes: 'glasses', hold: 'brush' };
 
 type Item<V extends string> = {
   id: V;
@@ -30,38 +31,24 @@ type Item<V extends string> = {
 /** The wardrobe, by slot. Items with an unlockStreak are earned by keeping a streak. */
 export const WARDROBE: { [S in Slot]: { title: string; items: Item<Outfit[S]>[] } } = {
   hat: {
-    title: 'Hats',
+    title: 'Hat',
     items: [
+      { id: 'beret', label: 'Striped beret', unlockStreak: 0 },
       { id: 'none', label: 'None', unlockStreak: 0 },
-      { id: 'beret', label: 'Beret', unlockStreak: 0 },
-      { id: 'beanie', label: 'Beanie', unlockStreak: 0 },
-      { id: 'party', label: 'Party hat', unlockStreak: 7 },
-      { id: 'crown', label: 'Crown', unlockStreak: 30 },
     ],
   },
   eyes: {
     title: 'Glasses',
     items: [
+      { id: 'glasses', label: 'Glasses', unlockStreak: 0 },
       { id: 'none', label: 'None', unlockStreak: 0 },
-      { id: 'round', label: 'Round', unlockStreak: 0 },
-      { id: 'shades', label: 'Shades', unlockStreak: 14 },
     ],
   },
-  neck: {
-    title: 'Neck',
+  hold: {
+    title: 'Brush',
     items: [
+      { id: 'brush', label: 'Paintbrush', unlockStreak: 0 },
       { id: 'none', label: 'None', unlockStreak: 0 },
-      { id: 'scarf', label: 'Scarf', unlockStreak: 0 },
-      { id: 'bowtie', label: 'Bow tie', unlockStreak: 3 },
-    ],
-  },
-  color: {
-    title: 'Color',
-    items: [
-      { id: 'graphite', label: 'Graphite', unlockStreak: 0 },
-      { id: 'blue', label: 'Blue pencil', unlockStreak: 0 },
-      { id: 'red', label: 'Red pencil', unlockStreak: 5 },
-      { id: 'sage', label: 'Sage pencil', unlockStreak: 21 },
     ],
   },
 };

@@ -21,7 +21,7 @@ import {
 import { usePostedToday } from '@/data/today';
 import { useTheme } from '@/hooks/use-theme';
 
-const SLOTS: Slot[] = ['hat', 'eyes', 'neck', 'color'];
+const SLOTS: Slot[] = ['hat', 'eyes', 'hold'];
 const COLUMNS = 3;
 
 /**
@@ -68,7 +68,7 @@ export default function ProfileScreen() {
 
       {/* Smudge, dressed up */}
       <View style={styles.hero}>
-        <Smudge size={170} mood="happy" animated />
+        <Smudge size={220} mood="happy" animated />
       </View>
 
       {/* Name and stats */}
