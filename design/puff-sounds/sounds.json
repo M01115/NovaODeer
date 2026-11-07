@@ -1,0 +1,226 @@
+[
+  {
+    "id": "tap",
+    "group": "Taps and UI",
+    "name": "Bubble tap",
+    "when": "Any main button (Start sketching, Snap my sketch).",
+    "seconds": 0.38,
+    "loop": false
+  },
+  {
+    "id": "tab",
+    "group": "Taps and UI",
+    "name": "Pebble click",
+    "when": "Tab bar, chips, small toggles.",
+    "seconds": 0.26,
+    "loop": false
+  },
+  {
+    "id": "back",
+    "group": "Taps and UI",
+    "name": "Blub back",
+    "when": "Back, close, dismiss a sheet.",
+    "seconds": 0.35,
+    "loop": false
+  },
+  {
+    "id": "gentle-no",
+    "group": "Taps and UI",
+    "name": "Soft blub (not that)",
+    "when": "Something can't be done yet (e.g. feed still locked). Never a \"wrong\" buzzer.",
+    "seconds": 0.66,
+    "loop": false
+  },
+  {
+    "id": "app-open",
+    "group": "App open",
+    "name": "Puff rolls in",
+    "when": "Cold start, synced to the 4 s \"App opens\" animation.",
+    "seconds": 5.6,
+    "loop": false
+  },
+  {
+    "id": "session-start",
+    "group": "Sketch countdown",
+    "name": "Ready, set, sketch",
+    "when": "Timer starts.",
+    "seconds": 2.4,
+    "loop": false
+  },
+  {
+    "id": "one-minute",
+    "group": "Sketch countdown",
+    "name": "Sonar ping (1:00 left)",
+    "when": "1:00 left. Puff peeks closer.",
+    "seconds": 2.28,
+    "loop": false
+  },
+  {
+    "id": "thirty-sec",
+    "group": "Sketch countdown",
+    "name": "Nervous double ping (0:30)",
+    "when": "0:30 left. Puff sweats.",
+    "seconds": 1.83,
+    "loop": false
+  },
+  {
+    "id": "tick",
+    "group": "Sketch countdown",
+    "name": "Water-drop tick",
+    "when": "Each second from 0:10 to 0:04.",
+    "seconds": 0.34,
+    "loop": false
+  },
+  {
+    "id": "tick-high",
+    "group": "Sketch countdown",
+    "name": "Last-3 tick",
+    "when": "0:03, 0:02, 0:01.",
+    "seconds": 0.33,
+    "loop": false
+  },
+  {
+    "id": "time-up",
+    "group": "Sketch countdown",
+    "name": "Buoy bell (time's up)",
+    "when": "0:00. Friendly, not an alarm: you can keep drawing.",
+    "seconds": 3.8,
+    "loop": false
+  },
+  {
+    "id": "overtime-creak",
+    "group": "Sketch countdown",
+    "name": "Overtime creak",
+    "when": "Every ~6 s in overtime. Raise playback rate each time (1.0 → 1.6) as Puff inflates.",
+    "seconds": 0.69,
+    "loop": false
+  },
+  {
+    "id": "inflate",
+    "group": "Sketch countdown",
+    "name": "Final inflate",
+    "when": "Start at +0:57 so it peaks into the pop.",
+    "seconds": 3.13,
+    "loop": false
+  },
+  {
+    "id": "pop",
+    "group": "Sketch countdown",
+    "name": "POP",
+    "when": "+1:00. Puff pops (comedy, not failure).",
+    "seconds": 1.36,
+    "loop": false
+  },
+  {
+    "id": "reform",
+    "group": "Sketch countdown",
+    "name": "Sheepish reform",
+    "when": "Right after the pop, as Puff pulls back together.",
+    "seconds": 2.46,
+    "loop": false
+  },
+  {
+    "id": "snap",
+    "group": "Sketch countdown",
+    "name": "Clam snap (photo)",
+    "when": "Photo of the paper sketch taken.",
+    "seconds": 0.56,
+    "loop": false
+  },
+  {
+    "id": "scan",
+    "group": "Puff's feedback",
+    "name": "Sonar scan",
+    "when": "Scan line sweeps your photo (first ~2 s).",
+    "seconds": 2.24,
+    "loop": false
+  },
+  {
+    "id": "thinking-loop",
+    "group": "Puff's feedback",
+    "name": "Thinking bubbles (loop)",
+    "when": "Loop while waiting for the AI. Seamless 2.4 s.",
+    "seconds": 2.4,
+    "loop": true
+  },
+  {
+    "id": "aha",
+    "group": "Puff's feedback",
+    "name": "Aha!",
+    "when": "AI answer arrives; Puff jumps.",
+    "seconds": 2.6,
+    "loop": false
+  },
+  {
+    "id": "type-blip",
+    "group": "Puff's feedback",
+    "name": "Word blip",
+    "when": "Each word as Puff's note types out. Vary rate 0.9-1.2.",
+    "seconds": 0.14,
+    "loop": false
+  },
+  {
+    "id": "notice",
+    "group": "Puff's feedback",
+    "name": "Puff noticed something",
+    "when": "Puff's note lands. The \"correct!\" moment, but about noticing, not grading.",
+    "seconds": 2,
+    "loop": false
+  },
+  {
+    "id": "post",
+    "group": "Posting and streaks",
+    "name": "Bubble to the surface",
+    "when": "Sketch posted.",
+    "seconds": 2.4,
+    "loop": false
+  },
+  {
+    "id": "streak",
+    "group": "Posting and streaks",
+    "name": "Streak extended",
+    "when": "Synced to the 4 s \"Streak extended\" animation.",
+    "seconds": 5.2,
+    "loop": false
+  },
+  {
+    "id": "milestone",
+    "group": "Posting and streaks",
+    "name": "Streak milestone",
+    "when": "7, 30, 100 days. Swap in for \"streak\" on those days.",
+    "seconds": 4.6,
+    "loop": false
+  },
+  {
+    "id": "streak-lost",
+    "group": "Posting and streaks",
+    "name": "Gentle deflate (streak reset)",
+    "when": "First open after a missed day. Kind: a sigh, then a hopeful note.",
+    "seconds": 2.93,
+    "loop": false
+  },
+  {
+    "id": "unlock-feed",
+    "group": "Posting and streaks",
+    "name": "Shell glissando (friends unlock)",
+    "when": "Friends' sketches unlock after you post.",
+    "seconds": 3.2,
+    "loop": false
+  },
+  {
+    "id": "reaction",
+    "group": "Posting and streaks",
+    "name": "Pop-pop (reaction)",
+    "when": "Someone reacts to your sketch / you react to theirs.",
+    "seconds": 0.56,
+    "loop": false
+  },
+  {
+    "id": "notify",
+    "group": "Posting and streaks",
+    "name": "Today's prompt is here",
+    "when": "Push notification sound (keep under 30 s for iOS; this is 1.8 s).",
+    "seconds": 3,
+    "loop": false
+  }
+]
