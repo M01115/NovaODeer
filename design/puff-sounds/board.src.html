@@ -1,0 +1,193 @@
+<title>Puff Sound Kit</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@600;700;800&display=swap">
+<style>
+  /* Layout: one column of scene groups; each sound is a row (play button, name + trigger, waveform). Demos replay whole moments. */
+  :root{
+    --paper:#FAFAF7; --card:#FFFFFF; --line:#E4E4DD; --pill:#F0F0EA;
+    --ink:#2B2D33; --muted:#6F727A; --puff:#FFC53D; --blush:#FF9DB0; --blush-deep:#E0507A;
+    --wave:#B9BCC4; --wave-on:#2B2D33; --water:#E9F1F2;
+    --display:"Fredoka","Nunito",system-ui,sans-serif; --body:"Nunito",system-ui,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+    --paper:#17181B; --card:#202125; --line:#33343A; --pill:#2A2B30; --ink:#ECECE8; --muted:#A0A2A8;
+    --puff:#FFC53D; --blush:#FF9DB0; --blush-deep:#FF8FAA; --wave:#55575E; --wave-on:#ECECE8; --water:#1D2629; color-scheme:dark}}
+  :root[data-theme="dark"]{
+    --paper:#17181B; --card:#202125; --line:#33343A; --pill:#2A2B30; --ink:#ECECE8; --muted:#A0A2A8;
+    --puff:#FFC53D; --blush:#FF9DB0; --blush-deep:#FF8FAA; --wave:#55575E; --wave-on:#ECECE8; --water:#1D2629; color-scheme:dark}
+  body{background:var(--paper);color:var(--ink);font-family:var(--body);font-weight:700;padding-block:28px 56px;
+    padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .wrap{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:36px}
+  header{display:flex;flex-direction:column;gap:8px}
+  h1{font-family:var(--display);font-weight:600;font-size:32px;margin:0;text-wrap:balance;display:flex;align-items:center;gap:12px}
+  h1 svg{width:44px;height:44px;flex:none}
+  .intro{margin:0;color:var(--muted);font-size:15px;line-height:1.55;max-width:66ch;font-weight:600}
+  .rules{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+  .rules span{background:var(--pill);border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:800}
+  .mute{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-top:6px}
+
+  section{display:flex;flex-direction:column;gap:10px}
+  h2{font-family:var(--display);font-weight:600;font-size:22px;margin:0;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  h2 small{font-family:var(--body);font-size:13px;color:var(--muted);font-weight:700}
+  .demo{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;font:600 15px var(--display);color:#2B2D33;background:var(--puff);
+    border:2.5px solid #2B2D33;border-radius:14px;padding:8px 14px;box-shadow:0 3px 0 #2B2D33;cursor:pointer}
+  .demo:active{transform:translateY(3px);box-shadow:0 0 0 #2B2D33}
+  .demo svg{width:14px;height:14px}
+  .list{display:flex;flex-direction:column;background:var(--card);border:1.5px solid var(--line);border-radius:18px;overflow:hidden}
+  .row{display:grid;grid-template-columns:52px minmax(0,1fr) minmax(0,260px);align-items:center;gap:14px;padding:12px 14px;border-top:1.5px solid var(--line)}
+  .row:first-child{border-top:0}
+  .row.playing{background:var(--water)}
+  .play{width:46px;height:46px;border-radius:14px;background:var(--blush);color:#2B2D33;border:2.5px solid #2B2D33;box-shadow:0 3px 0 #2B2D33;
+    display:grid;place-items:center;cursor:pointer;padding:0}
+  .play:active{transform:translateY(3px);box-shadow:0 0 0 #2B2D33}
+  .play svg{width:16px;height:16px}
+  button:focus-visible{outline:3px solid var(--blush-deep);outline-offset:3px}
+  .meta{display:flex;flex-direction:column;gap:3px;min-width:0}
+  .name{font-family:var(--display);font-weight:600;font-size:17px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+  .name code{font:700 12px ui-monospace,Consolas,monospace;color:var(--muted)}
+  .when{font-size:13.5px;color:var(--muted);line-height:1.45;font-weight:600}
+  .wavebox{display:flex;flex-direction:column;gap:4px;min-width:0}
+  canvas{width:100%;height:46px;display:block}
+  .wavefoot{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .rate{display:flex;align-items:center;gap:6px}
+  .rate input{width:86px;accent-color:var(--blush-deep)}
+  .marks{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12px;color:var(--muted);grid-column:2 / -1}
+  .marks b{color:var(--ink);font-variant-numeric:tabular-nums}
+  footer{color:var(--muted);font-size:13.5px;line-height:1.6;border-top:1.5px solid var(--line);padding-top:16px;font-weight:600}
+  footer code{font:700 12.5px ui-monospace,Consolas,monospace;color:var(--ink)}
+  @media (max-width:640px){
+    .row{grid-template-columns:52px minmax(0,1fr)}
+    .wavebox{grid-column:1 / -1}
+    .marks{grid-column:1 / -1}
+  }
+  @media (prefers-reduced-motion: reduce){.play:active,.demo:active{transform:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1><svg viewBox="0 0 60 60" aria-hidden="true"><g stroke="#2B2D33" stroke-width="2.5" stroke-linejoin="round"><g fill="#FFC53D" id="sp"></g><circle cx="30" cy="31" r="18" fill="#FFC53D"/></g><ellipse cx="31" cy="39" rx="10" ry="5" fill="#FFE7A1"/><circle cx="25" cy="27" r="3.6" fill="#fff" stroke="#2B2D33" stroke-width="2"/><circle cx="35" cy="27" r="3.6" fill="#fff" stroke="#2B2D33" stroke-width="2"/><circle cx="26" cy="27" r="1.7" fill="#2B2D33"/><circle cx="36" cy="27" r="1.7" fill="#2B2D33"/><path d="M27 34q3 3 6 0" stroke="#2B2D33" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="50" cy="12" r="3" fill="none" stroke="var(--muted)" stroke-width="1.6"/><circle cx="55" cy="4" r="1.8" fill="none" stroke="var(--muted)" stroke-width="1.4"/></svg>Puff Sound Kit</h1>
+    <p class="intro">Every moment in the app gets a sound from Puff's world: bubbles instead of beeps, a shell marimba instead of a xylophone, sonar pings for the timer, rubbery skin for inflating. Like Duolingo, the good moments rise in pitch and the "not yet" moments are soft, short, and never a buzzer. Every sound is made from code and sits in D major pentatonic, so any two can overlap without clashing.</p>
+    <div class="rules"><span>Rising = good</span><span>Soft blub = not yet</span><span>Big sounds match the animation timings</span><span>No sound scolds</span></div>
+  </header>
+  <div id="groups"></div>
+  <footer>
+    Files: <code>wav/&lt;id&gt;.wav</code> (44.1 kHz, 16-bit mono) plus <code>sounds.json</code>. In Expo, load with <code>expo-audio</code> and set the rate where a row says to (creak, word blip). To change a sound, edit its recipe in <code>puff-sounds.js</code> and run <code>node render.js</code>.
+  </footer>
+</div>
+
+<script>/*ENGINE*/</script>
+<script>
+(() => {
+  const { SR, SOUNDS, render } = window.PuffSounds;
+  // spikes on the header Puff
+  const sp = document.getElementById('sp'); let s = '';
+  for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2, p = (ang, r) => `${(30 + Math.cos(ang) * r).toFixed(1)},${(31 + Math.sin(ang) * r).toFixed(1)}`; s += `<polygon points="${p(a - .2, 16)} ${p(a, 24)} ${p(a + .2, 16)}"/>`; }
+  sp.innerHTML = s;
+
+  const RATE = { 'overtime-creak': [1, 1.6], 'type-blip': [0.9, 1.2] };
+  const PLAY = '<svg viewBox="0 0 16 16"><path d="M4 2.5v11l9.5-5.5z" fill="currentColor"/></svg>';
+  const STOP = '<svg viewBox="0 0 16 16"><rect x="3.5" y="3.5" width="9" height="9" rx="1.5" fill="currentColor"/></svg>';
+
+  const DEMOS = {
+    'App open': [['app-open', 0]],
+    'Sketch countdown': [['session-start', 0], ['one-minute', 1.2], ['thirty-sec', 3.2], ...[0,1,2,3,4,5,6].map(i => ['tick', 5 + i * .5]), ...[0,1,2].map(i => ['tick-high', 8.5 + i * .5]), ['time-up', 10],
+      ['overtime-creak', 12.3, 1], ['overtime-creak', 13.4, 1.2], ['overtime-creak', 14.4, 1.4], ['inflate', 15.2], ['pop', 17.9], ['reform', 18.7]],
+    "Puff's feedback": [['snap', 0], ['scan', 0.6], ['thinking-loop', 2.8], ['aha', 5.2], ...[0,1,2,3,4,5,6,7].map(i => ['type-blip', 5.9 + i * .13, .9 + (i * 37 % 7) / 20]), ['notice', 7.1]],
+    'Posting and streaks': [['post', 0], ['streak', 1.0], ['unlock-feed', 5.6], ['reaction', 7.9]],
+  };
+  const DEMO_LABEL = { 'App open': 'Play the open', 'Sketch countdown': 'Play a compressed session (20 s)', "Puff's feedback": 'Play snap to feedback', 'Posting and streaks': 'Play post, streak, unlock' };
+
+  const data = {}, rows = {};
+  let ctx = null, buffers = {}, current = null, muted = false;
+  const audio = () => { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') ctx.resume(); return ctx; };
+  const buffer = id => { if (!buffers[id]) { const b = audio().createBuffer(1, data[id].length, SR); b.getChannelData(0).set(data[id]); buffers[id] = b; } return buffers[id]; };
+
+  function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+  function draw(id, prog) {
+    const c = rows[id].canvas, d = data[id]; if (!d) return;
+    const w = c.clientWidth, h = c.clientHeight, dpr = window.devicePixelRatio || 1;
+    if (c.width !== Math.round(w * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
+    const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+    const cols = Math.max(1, Math.floor(w / 3)), per = d.length / cols, on = css('--wave-on'), off = css('--wave');
+    for (let x = 0; x < cols; x++) {
+      let m = 0; for (let i = Math.floor(x * per), e = Math.floor((x + 1) * per); i < e; i += 4) m = Math.max(m, Math.abs(d[i]));
+      const bh = Math.max(2, Math.sqrt(m) * (h - 4));
+      g.fillStyle = prog != null && x / cols <= prog ? on : off;
+      g.beginPath(); g.roundRect ? g.roundRect(x * 3, (h - bh) / 2, 2, bh, 1) : g.rect(x * 3, (h - bh) / 2, 2, bh); g.fill();
+    }
+    const snd = SOUNDS.find(s => s.id === id);
+    if (snd.timeline) { g.fillStyle = css('--blush-deep'); snd.timeline.forEach(([t]) => { const x = t * SR / d.length * w; g.fillRect(x, 0, 1.5, h); }); }
+  }
+
+  function stop() { if (!current) return; current.nodes.forEach(n => { try { n.stop(); } catch (e) {} }); current.ids.forEach(id => { rows[id].row.classList.remove('playing'); rows[id].btn.innerHTML = PLAY; draw(id); }); if (current.btn) current.btn.lastChild.textContent = current.label; current = null; }
+  function start(id, when, rate) {
+    const src = audio().createBufferSource(); src.buffer = buffer(id); src.playbackRate.value = rate || 1;
+    src.loop = false; src.connect(ctx.destination); src.start(ctx.currentTime + (when || 0)); return src;
+  }
+  function animate(token) {
+    if (current !== token) return;
+    const now = ctx.currentTime;
+    token.plays.forEach(p => { const dur = data[p.id].length / SR / p.rate, u = (now - p.t0) / dur; if (u >= 0 && u <= 1) { rows[p.id].row.classList.add('playing'); draw(p.id, u); } else if (u > 1 && !token.plays.some(q => q !== p && q.id === p.id && (now - q.t0) >= 0 && (now - q.t0) <= data[q.id].length / SR / q.rate)) { rows[p.id].row.classList.remove('playing'); draw(p.id); } });
+    if (now > token.end) { stop(); return; }
+    requestAnimationFrame(() => animate(token));
+  }
+  function playSet(list, btn, label) {
+    stop(); if (muted) return;
+    const a = audio(), base = a.currentTime + 0.05, token = { nodes: [], ids: new Set(), plays: [], end: 0, btn, label };
+    list.forEach(([id, t, rate]) => {
+      rate = rate || (RATE[id] ? +rows[id].rate.value : 1);
+      token.nodes.push(start(id, base - a.currentTime + t, rate)); token.ids.add(id);
+      token.plays.push({ id, t0: base + t, rate }); token.end = Math.max(token.end, base + t + data[id].length / SR / rate);
+    });
+    current = token;
+    if (btn) btn.lastChild.textContent = 'Stop';
+    else token.ids.forEach(id => rows[id].btn.innerHTML = STOP);
+    animate(token);
+  }
+
+  // build the page
+  const groups = document.getElementById('groups'); const byGroup = {};
+  SOUNDS.forEach(s => (byGroup[s.group] = byGroup[s.group] || []).push(s));
+  groups.style.cssText = 'display:flex;flex-direction:column;gap:36px';
+  Object.entries(byGroup).forEach(([g, list]) => {
+    const sec = document.createElement('section');
+    sec.innerHTML = `<h2>${g}<small>${list.length} sound${list.length > 1 ? 's' : ''}</small></h2>`;
+    if (DEMOS[g] && g !== 'App open') {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'demo'; b.id = 'demo-' + g.replace(/\W+/g, '-').toLowerCase();
+      b.innerHTML = PLAY; b.append(DEMO_LABEL[g]);
+      b.onclick = () => current && current.btn === b ? stop() : playSet(DEMOS[g], b, DEMO_LABEL[g]);
+      sec.append(b);
+    }
+    const ul = document.createElement('div'); ul.className = 'list'; sec.append(ul);
+    list.forEach(snd => {
+      const row = document.createElement('div'); row.className = 'row';
+      const r = RATE[snd.id];
+      row.innerHTML = `<button type="button" class="play" id="play-${snd.id}" aria-label="Play ${snd.name}">${PLAY}</button>
+        <div class="meta"><div class="name">${snd.name}<code>${snd.id}.wav</code></div><div class="when">${snd.when}</div></div>
+        <div class="wavebox"><canvas aria-hidden="true"></canvas><div class="wavefoot"><span class="dur"></span>${r ? `<label class="rate" for="rate-${snd.id}">rate <input type="range" id="rate-${snd.id}" min="${r[0]}" max="${r[1]}" step="0.05" value="${r[0]}"><span class="rv">${r[0].toFixed(2)}×</span></label>` : snd.loop ? '<span>loops</span>' : ''}</div></div>
+        ${snd.timeline ? `<div class="marks">${snd.timeline.map(([t, l]) => `<span><b>${t.toFixed(1)}s</b> ${l}</span>`).join('')}</div>` : ''}`;
+      ul.append(row);
+      const ref = rows[snd.id] = { row, btn: row.querySelector('.play'), canvas: row.querySelector('canvas'), rate: row.querySelector('input') };
+      if (ref.rate) ref.rate.oninput = () => row.querySelector('.rv').textContent = (+ref.rate.value).toFixed(2) + '×';
+      ref.btn.onclick = () => current && !current.btn && current.ids.has(snd.id) ? stop() : playSet(snd.loop ? [[snd.id, 0], [snd.id, snd.loop], [snd.id, snd.loop * 2]] : [[snd.id, 0]]);
+    });
+    groups.append(sec);
+  });
+
+  // synthesize everything, a few at a time so the page stays responsive
+  let i = 0;
+  (function next() {
+    const t = performance.now();
+    while (i < SOUNDS.length && performance.now() - t < 40) {
+      const snd = SOUNDS[i++]; data[snd.id] = render(snd);
+      rows[snd.id].row.querySelector('.dur').textContent = (data[snd.id].length / SR).toFixed(2) + ' s';
+      draw(snd.id);
+    }
+    if (i < SOUNDS.length) setTimeout(next, 0);
+  })();
+  addEventListener('resize', () => Object.keys(data).forEach(id => draw(id)));
+  matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => Object.keys(data).forEach(id => draw(id)));
+})();
+</script>
