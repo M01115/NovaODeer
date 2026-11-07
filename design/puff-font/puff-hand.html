@@ -1,0 +1,346 @@
+<title>Puff Hand</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800&display=swap">
+<style>
+  /* Layout: one column specimen sheet. Live playground first, then the font in Puff's screens, the full character set, and the rules it is built on. */
+  :root{
+    --paper:#FAFAF7; --card:#FFFFFF; --line:#E4E4DD; --pill:#F0F0EA;
+    --ink:#2B2D33; --muted:#6F7279; --blush:#FF9DB0; --blush-deep:#E0507A;
+    --body:"Nunito",system-ui,sans-serif; --mono:ui-monospace,Consolas,monospace;
+    /* App palette, fixed: these are the content being shown. */
+    --app-graphite:#2B2D33; --app-paper:#FAFAF7; --app-blush:#FF9DB0; --app-puff:#FFC53D;
+  }
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--paper:#1B1C20;--card:#24262B;--line:#36383F;--pill:#2C2E34;--ink:#EDEDE8;--muted:#A3A5AB;--blush:#FF9DB0;--blush-deep:#FF7A9C;color-scheme:dark}}
+  :root[data-theme="dark"]{--paper:#1B1C20;--card:#24262B;--line:#36383F;--pill:#2C2E34;--ink:#EDEDE8;--muted:#A3A5AB;--blush:#FF9DB0;--blush-deep:#FF7A9C;color-scheme:dark}
+
+  body{background:var(--paper);color:var(--ink);font-family:var(--body);font-weight:500;font-size:16px;line-height:1.55;padding-block:28px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  main{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:56px}
+  svg.type{display:block;max-width:100%;height:auto;overflow:visible}
+  h2{font-size:13px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0}
+  p{margin:0;max-width:65ch}
+  .muted{color:var(--muted)}
+
+  header{display:flex;flex-direction:column;gap:14px}
+  header .mark{width:min(420px,100%)}
+  header p{font-size:17px}
+
+  /* Playground */
+  .play{display:flex;flex-direction:column;gap:18px}
+  .stage{background:var(--card);border:1.5px solid var(--line);border-radius:22px;padding:28px 24px;min-height:220px;display:flex;align-items:center;overflow:hidden}
+  .stage.dark{background:var(--app-graphite);border-color:var(--app-graphite)}
+  .stage svg{width:100%}
+  .controls{display:grid;grid-template-columns:minmax(0,1.4fr) repeat(4,minmax(0,1fr));gap:14px 22px;align-items:end}
+  .controls label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:800;min-width:0}
+  .controls label span{display:flex;justify-content:space-between;gap:8px}
+  .controls label output{font-family:var(--mono);font-weight:500;color:var(--muted)}
+  textarea{font:700 16px/1.4 var(--body);color:var(--ink);background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;resize:vertical;min-height:64px}
+  input[type=range]{accent-color:var(--blush-deep);width:100%}
+  .toggles{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .seg{display:inline-flex;background:var(--pill);border-radius:999px;padding:4px;gap:2px}
+  .seg button{font:800 14px var(--body);color:var(--muted);background:none;border:0;border-radius:999px;padding:7px 16px;cursor:pointer}
+  .seg button[aria-pressed=true]{background:var(--card);color:var(--ink);box-shadow:0 1px 0 var(--line)}
+  .chip{font:800 14px var(--body);color:var(--ink);background:var(--pill);border:0;border-radius:999px;padding:9px 16px;cursor:pointer}
+  .chip[aria-pressed=true]{background:var(--blush);color:var(--app-graphite)}
+  button:focus-visible,textarea:focus-visible,input:focus-visible{outline:2.5px solid var(--blush-deep);outline-offset:2px}
+
+  /* In the app */
+  .context{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+  .ctx{display:flex;flex-direction:column;gap:10px;min-width:0}
+  .ctx .tile{border-radius:22px;padding:22px 18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:190px}
+  .ctx .cap{font-size:14px;color:var(--muted)}
+  .ctx .cap b{color:var(--ink);font-weight:800}
+  .t-prompt{background-color:#fff;background-image:radial-gradient(#D7D7CF 1.2px,transparent 1.3px);background-size:14px 14px;border:1.5px solid #E4E4DD;color:var(--app-graphite)}
+  .t-prompt small{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#83868D}
+  .t-button{background:var(--app-paper);border:1.5px solid #E4E4DD}
+  .btn{background:var(--app-blush);color:var(--app-graphite);border:2.5px solid var(--app-graphite);box-shadow:0 4px 0 var(--app-graphite);border-radius:16px;padding:12px 18px;width:88%;display:flex;justify-content:center}
+  .t-puff{background:var(--app-graphite)}
+
+  /* Character set */
+  .set{display:flex;flex-direction:column;gap:14px}
+  .sethead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:8px}
+  .cell{background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:6px 4px 4px;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
+  .cell svg{height:78px;width:auto}
+  .cell code{font-family:var(--mono);font-size:11px;color:var(--muted)}
+
+  /* Rules */
+  .rules{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px}
+  .rules section{display:flex;flex-direction:column;gap:10px;min-width:0}
+  .rules h3{font-size:18px;font-weight:800;margin:0}
+  .rules ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:7px}
+  .metrics{display:grid;grid-template-columns:auto auto;gap:4px 16px;font-size:14px;justify-content:start}
+  .metrics dt{color:var(--muted)} .metrics dd{margin:0;font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .next{border-top:1.5px solid var(--line);padding-top:20px;display:flex;flex-direction:column;gap:8px}
+
+  @media (max-width:760px){
+    .controls{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .controls label.text{grid-column:1/-1}
+    .context,.rules{grid-template-columns:minmax(0,1fr)}
+  }
+</style>
+
+<!-- Shared paint for the Puff style: yellow top, belly cream bottom, split like Puff's body. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="bellySplit" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="130">
+      <stop offset="0" stop-color="#FFC53D"/><stop offset=".575" stop-color="#FFC53D"/>
+      <stop offset=".575" stop-color="#FFE7A1"/><stop offset="1" stop-color="#FFE7A1"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<main>
+  <header>
+    <div class="mark" id="mark" role="img" aria-label="Puff Hand"></div>
+    <p>A draft typeface for Puff. The skeleton and weight come from Duolingo Sans: one heavy weight, soft-cornered ends, a big x-height and tight spacing. The surface comes from Puff's drawings: gouache edges cut by hand, letters that roll a little off the baseline, and spike-shaped dots on the i and j.</p>
+  </header>
+
+  <section class="play" aria-label="Playground">
+    <div class="stage" id="stage"></div>
+    <div class="controls">
+      <label class="text" for="txt"><span>Text</span><textarea id="txt" rows="2">Today everyone draws
+a spoon!</textarea></label>
+      <label for="w"><span>Weight <output id="wOut">13</output></span><input id="w" type="range" min="9" max="18" step="0.5" value="13"></label>
+      <label for="wob"><span>Hand-cut edge <output id="wobOut">2.4</output></span><input id="wob" type="range" min="0" max="6" step="0.2" value="2.4"></label>
+      <label for="soft"><span>Corner <output id="softOut">1.6</output></span><input id="soft" type="range" min="0" max="5" step="0.2" value="1.6"></label>
+      <label for="bnc"><span>Roll <output id="bncOut">2.0</output></span><input id="bnc" type="range" min="0" max="6" step="0.2" value="2"></label>
+    </div>
+    <div class="toggles">
+      <div class="seg" role="group" aria-label="Style">
+        <button type="button" id="sInk" aria-pressed="true">Ink</button>
+        <button type="button" id="sPuff" aria-pressed="false">Puff</button>
+      </div>
+      <button type="button" class="chip" id="skel" aria-pressed="false">Show skeleton</button>
+      <button type="button" class="chip" id="reroll" aria-pressed="false">Reroll the wobble</button>
+    </div>
+  </section>
+
+  <section class="set" aria-label="In the app">
+    <h2>In Puff's screens</h2>
+    <div class="context">
+      <div class="ctx"><div class="tile t-prompt"><small>Today everyone draws</small><div id="cPrompt" style="width:78%"></div></div><p class="cap"><b>Prompt word.</b> Ink style, the biggest use of the face.</p></div>
+      <div class="ctx"><div class="tile t-button"><div class="btn"><div id="cBtn" style="width:100%"></div></div></div><p class="cap"><b>Button.</b> Graphite on blush, inside the drawn outline and drop.</p></div>
+      <div class="ctx"><div class="tile t-puff"><div id="cPuff" style="width:70%"></div></div><p class="cap"><b>Logo and celebrations.</b> Puff style, only on graphite, never yellow on white.</p></div>
+    </div>
+  </section>
+
+  <section class="set" aria-label="Character set">
+    <div class="sethead"><h2>Character set, 70 glyphs</h2><span class="muted" style="font-size:14px">Follows the weight, edge, roll and style controls above.</span></div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section class="rules" aria-label="How it is built">
+    <section>
+      <h3>From Duolingo Sans</h3>
+      <ul>
+        <li>One heavy weight, built as a single stroke. Ends are squared off with softened corners, a little firmer than Duolingo's fully round ends.</li>
+        <li>Big x-height (54 of a 74 cap) and short descenders, so words stay chunky at small sizes.</li>
+        <li>Bowls are squarer than circles, which gives the bouncy, toy-like feel.</li>
+        <li>Double-story a, l with a small foot, t with a hooked tail.</li>
+        <li>Tight spacing: one unit of tracking.</li>
+      </ul>
+    </section>
+    <section>
+      <h3>From Puff's drawings</h3>
+      <ul>
+        <li>No outline. Puff is flat gouache, so the letters are filled shapes too.</li>
+        <li>Hand-cut edge: slow, wide waves push every edge a little, the way a brush shape wobbles. No fine jitter.</li>
+        <li>Roll: each letter tips up to a couple of degrees, like Puff rolling on land.</li>
+        <li>The dots on i and j are Puff's spikes: a tilted wedge, not a circle.</li>
+        <li>Puff style copies the body: orange rim, yellow top, cream belly below the middle line.</li>
+      </ul>
+    </section>
+    <section>
+      <h3>Metrics, units of 100</h3>
+      <dl class="metrics">
+        <dt>Cap height</dt><dd>74</dd>
+        <dt>x-height</dt><dd>54</dd>
+        <dt>Ascender</dt><dd>78</dd>
+        <dt>Descender</dt><dd>−22</dd>
+        <dt>Stroke</dt><dd>13 (9–18)</dd>
+        <dt>Corner radius</dt><dd>~1.6</dd>
+        <dt>Tracking</dt><dd>+1</dd>
+        <dt>Word space</dt><dd>24</dd>
+      </dl>
+    </section>
+  </section>
+
+  <section class="next">
+    <h2>What this draft is</h2>
+    <p>Each glyph is a centerline path drawn with a round stroke, then roughened. That is quick to change while the shapes settle. To use it in the Expo app it needs to become a real font file: outline the strokes, bake one fixed wobble, and export an .otf that expo-font can load. Duolingo Sans itself is a licensed typeface, so this borrows its proportions and habits, not its outlines.</p>
+  </section>
+</main>
+
+<script>
+/* ---------- Glyphs: centerline paths, y down. Baseline 100, x-height 46, cap 26 (outer edges at stroke 13). ---------- */
+const G={};
+function g(ch,w,p,dot){G[ch]={w,p,dot};}
+const O="M50 73 C50 62 42 53 31 53 C20 53 12 62 12 73 C12 84 20 93 31 93 C42 93 50 84 50 73"; // x-height bowl
+// lowercase
+g("a",58,["M15 59 C20 54 26 53 31 53 C41 53 46 58 46 66 L46 93","M46 74 C40 73 34 73 28 74 C18 75 13 79 13 85 C13 90 18 93 25 93 C34 93 42 89 46 82"]);
+g("b",62,["M12 29 L12 93","M12 73 C12 62 20 53 31 53 C42 53 50 62 50 73 C50 84 42 93 31 93 C20 93 12 84 12 73"]);
+g("c",56,["M45 60 C41 55 36 53 31 53 C20 53 12 62 12 73 C12 84 20 93 31 93 C36 93 41 91 45 86"]);
+g("d",62,["M50 29 L50 93",O]);
+g("e",60,["M13 73 L49 73 C49 62 41 53 31 53 C20 53 12 62 12 73 C12 84 20 93 31 93 C38 93 43 90 47 85"]);
+g("f",44,["M37 32 C34 30 31 29 28 29 C22 29 20 34 20 40 L20 93","M10 55 L34 55"]);
+g("g",62,["M50 53 L50 99 C50 110 42 115 31 115 C24 115 18 113 14 109","M50 71 C50 61 42 53 31 53 C20 53 12 61 12 71 C12 81 20 89 31 89 C42 89 50 81 50 71"]);
+g("h",57,["M12 29 L12 93","M12 68 C12 59 19 53 28 53 C39 53 45 59 45 68 L45 93"]);
+g("i",25,["M12 55 L12 93"],12);
+g("j",29,["M16 55 L16 105 C16 112 12 115 6 115"],16);
+g("k",54,["M12 29 L12 93","M42 53 L13 77","M24 69 L44 93"]);
+g("l",29,["M12 29 L12 85 C12 90 15 93 20 93"]);
+g("m",74,["M12 53 L12 93","M12 66 C12 58 17 53 25 53 C33 53 37 58 37 66 L37 93","M37 66 C37 58 41 53 49 53 C57 53 62 58 62 66 L62 93"]);
+g("n",57,["M12 53 L12 93","M12 68 C12 59 19 53 28 53 C39 53 45 59 45 68 L45 93"]);
+g("o",62,[O]);
+g("p",62,["M12 53 L12 115","M12 73 C12 62 20 53 31 53 C42 53 50 62 50 73 C50 84 42 93 31 93 C20 93 12 84 12 73"]);
+g("q",62,["M50 53 L50 115",O]);
+g("r",44,["M12 53 L12 93","M12 70 C12 60 19 53 30 53 C33 53 35 54 37 55"]);
+g("s",52,["M41 59 C37 55 32 53 26 53 C18 53 13 57 13 63 C13 70 20 72 27 73 C35 74 41 77 41 83 C41 89 35 93 27 93 C20 93 14 91 11 87"]);
+g("t",44,["M20 37 L20 84 C20 90 23 93 29 93 C32 93 34 92 36 91","M9 55 L34 55"]);
+g("u",57,["M12 53 L12 78 C12 87 18 93 28 93 C38 93 45 87 45 78","M45 53 L45 93"]);
+g("v",56,["M11 53 L28 93 L45 53"]);
+g("w",71,["M10 53 L22 93 L35 61 L48 93 L60 53"]);
+g("x",56,["M12 53 L44 93","M44 53 L12 93"]);
+g("y",56,["M11 53 L28 93","M45 53 L26 103 C23 111 18 115 10 115"]);
+g("z",55,["M13 55 L42 55 L13 91 L43 91"]);
+// capitals
+g("A",62,["M10 93 L31 33 L52 93","M19 75 L43 75"]);
+g("B",62,["M13 33 L13 93","M13 33 L33 33 C42 33 47 38 47 46 C47 54 42 61 33 61 L13 61","M13 61 L36 61 C45 61 51 67 51 76 C51 86 45 93 35 93 L13 93"]);
+g("C",66,["M55 42 C50 36 43 33 36 33 C21 33 12 46 12 63 C12 80 21 93 36 93 C43 93 50 90 55 84"]);
+g("D",68,["M13 33 L13 93","M13 33 L30 33 C46 33 55 45 55 63 C55 81 46 93 30 93 L13 93"]);
+g("E",58,["M47 33 L13 33 L13 93 L47 93","M13 62 L41 62"]);
+g("F",56,["M47 33 L13 33 L13 93","M13 62 L41 62"]);
+g("G",69,["M55 42 C50 36 43 33 36 33 C21 33 12 46 12 63 C12 80 21 93 36 93 C48 93 56 85 56 72 L56 66 L38 66"]);
+g("H",66,["M13 33 L13 93","M52 33 L52 93","M13 62 L52 62"]);
+g("I",26,["M13 33 L13 93"]);
+g("J",52,["M40 33 L40 74 C40 86 33 93 23 93 C16 93 11 90 8 85"]);
+g("K",62,["M13 33 L13 93","M50 33 L14 68","M27 56 L52 93"]);
+g("L",52,["M13 33 L13 93 L45 93"]);
+g("M",76,["M13 93 L13 33 L38 72 L63 33 L63 93"]);
+g("N",66,["M13 93 L13 33 L52 93 L52 33"]);
+g("O",76,["M38 33 C55 33 64 46 64 63 C64 80 55 93 38 93 C21 93 12 80 12 63 C12 46 21 33 38 33"]);
+g("P",60,["M13 93 L13 33 L33 33 C44 33 51 40 51 50 C51 60 44 67 33 67 L13 67"]);
+g("Q",76,["M38 33 C55 33 64 46 64 63 C64 80 55 93 38 93 C21 93 12 80 12 63 C12 46 21 33 38 33","M45 79 L63 99"]);
+g("R",62,["M13 93 L13 33 L33 33 C44 33 51 40 51 50 C51 60 44 66 33 66 L13 66","M33 66 L51 93"]);
+g("S",62,["M50 41 C46 36 40 33 32 33 C21 33 14 39 14 47 C14 56 22 59 32 61 C43 63 51 67 51 76 C51 86 43 93 32 93 C23 93 16 90 11 84"]);
+g("T",60,["M8 33 L52 33","M30 33 L30 93"]);
+g("U",66,["M13 33 L13 70 C13 84 21 93 33 93 C45 93 53 84 53 70 L53 33"]);
+g("V",62,["M10 33 L31 93 L52 33"]);
+g("W",78,["M9 33 L23 93 L39 49 L55 93 L69 33"]);
+g("X",62,["M12 33 L50 93","M50 33 L12 93"]);
+g("Y",62,["M10 33 L31 63 L52 33","M31 63 L31 93"]);
+g("Z",64,["M13 33 L50 33 L13 93 L51 93"]);
+// digits
+g("0",64,["M32 33 C45 33 52 46 52 63 C52 80 45 93 32 93 C19 93 12 80 12 63 C12 46 19 33 32 33"]);
+g("1",44,["M14 43 L28 33 L28 93"]);
+g("2",62,["M13 45 C15 38 22 33 31 33 C41 33 48 39 48 48 C48 58 40 64 30 72 L13 92 L50 92"]);
+g("3",62,["M14 40 C18 35 24 33 31 33 C41 33 47 38 47 46 C47 54 41 60 30 60","M30 60 C42 60 49 66 49 76 C49 86 41 93 30 93 C22 93 16 90 12 85"]);
+g("4",62,["M40 93 L40 33 L11 75 L52 75"]);
+g("5",62,["M47 33 L19 33 L16 58 C20 56 25 55 30 55 C42 55 49 63 49 74 C49 85 41 93 30 93 C22 93 16 90 12 85"]);
+g("6",62,["M45 37 C41 34 36 33 32 33 C19 33 12 47 12 66","M12 72 C12 61 20 55 31 55 C42 55 49 62 49 74 C49 85 42 93 31 93 C20 93 12 85 12 72 L12 66"]);
+g("7",60,["M12 33 L50 33 L26 93"]);
+g("8",62,["M31 61 C21 61 15 55 15 47 C15 39 22 33 31 33 C40 33 47 39 47 47 C47 55 41 61 31 61 C19 61 12 67 12 77 C12 87 20 93 31 93 C42 93 50 87 50 77 C50 67 43 61 31 61"]);
+g("9",62,["M17 89 C21 92 26 93 30 93 C43 93 50 79 50 60","M50 54 C50 65 42 71 31 71 C20 71 13 64 13 52 C13 41 20 33 31 33 C42 33 50 41 50 54 L50 60"]);
+// punctuation
+g(".",25,["M12 93 L12 93"]);
+g(",",26,["M14 92 L9 105"]);
+g("!",26,["M13 35 L13 71","M13 93 L13 93"]);
+g("?",56,["M12 44 C14 37 21 33 30 33 C40 33 46 39 46 47 C46 56 39 59 32 63 C30 64 29 67 29 72","M29 93 L29 93"]);
+g("'",24,["M12 33 L12 46"]);
+g("-",44,["M10 72 L34 72"]);
+g(":",25,["M12 62 L12 62","M12 93 L12 93"]);
+g("&",64,["M54 93 L23 58 C18 52 18 46 22 40 C25 35 30 33 34 33 C40 33 44 37 44 43 C44 50 38 54 29 59 C19 64 13 69 13 78 C13 87 20 93 30 93 C40 93 47 87 53 76"]);
+
+const SPACE=24, TRACK=1, LH=112;
+const SET=["abcdefghijklmnopqrstuvwxyz","ABCDEFGHIJKLMNOPQRSTUVWXYZ","0123456789.,!?':-&"];
+
+/* ---------- Engine ---------- */
+let uid=0, seed=7;
+const hash=n=>{const s=Math.sin(n*12.9898+seed*78.233)*43758.5453;return s-Math.floor(s);};
+
+// Puff's spike: a tilted wedge with one curved side.
+function wedge(cx,cy,W,fill){
+  const k=W/13;
+  const P=(x,y)=>`${(cx+x*k).toFixed(1)} ${(cy+y*k).toFixed(1)}`;
+  return `<path d="M${P(-6,6)} Q${P(-1,-1)} ${P(5,-12)} Q${P(7,-1)} ${P(5,6)} Z" fill="${fill}" stroke="${fill}" stroke-width="${2.5*k}"/>`;
+}
+function glyph(gl,W,style){
+  const d=gl.p.join(" ");
+  let s = style==="puff"
+    ? `<path d="${d}" stroke="#F2A21B" stroke-width="${W+3.4}"/><path d="${d}" stroke="url(#bellySplit)" stroke-width="${W}"/>`
+    : `<path d="${d}" stroke="currentColor" stroke-width="${W}"/>`;
+  if(gl.dot!=null) s+=wedge(gl.dot,35,W,style==="puff"?"#F2A21B":"currentColor");
+  return s;
+}
+// Lay out text and return an SVG string. Coordinates are font units; the SVG scales to its box.
+function render(text,o){
+  const {W,wob,bnc,style,skel,soft}=o;
+  const id="wb"+(++uid);
+  let ink="",bones="",maxX=0;
+  const lines=text.split("\n");
+  lines.forEach((line,li)=>{
+    let x=4; const oy=li*LH;
+    [...line].forEach((ch,i)=>{
+      if(ch===" "){x+=SPACE;return;}
+      const gl=G[ch]||G[ch.toLowerCase()]||G[ch.toUpperCase()];
+      if(!gl){x+=SPACE;return;}
+      const h1=hash(li*131+i*17+ch.charCodeAt(0)), h2=hash(li*57+i*31+ch.charCodeAt(0)*3);
+      const r=((h1-.5)*2*bnc).toFixed(2), dy=((h2-.5)*bnc*1.1).toFixed(2);
+      const t=`translate(${x} ${oy+ +dy}) rotate(${r} ${gl.w/2} 80)`;
+      ink+=`<g transform="${t}">${glyph(gl,W,style)}</g>`;
+      if(skel) bones+=`<g transform="${t}"><path d="${gl.p.join(" ")}" stroke="var(--blush-deep)" stroke-width="1.1" fill="none"/></g>`;
+      x+=gl.w+TRACK;
+    });
+    maxX=Math.max(maxX,x);
+  });
+  const h=lines.length*LH;
+  let metric="";
+  if(skel){
+    lines.forEach((_,li)=>{[[26,"cap"],[46,"x"],[100,"base"],[122,"desc"]].forEach(([y,n])=>{
+      metric+=`<line x1="0" x2="${maxX}" y1="${y+li*LH}" y2="${y+li*LH}" stroke="var(--blush)" stroke-width=".6" stroke-dasharray="${n==="base"?"none":"3 3"}"/>`;
+    });});
+  }
+  // Edge: one octave of low-frequency noise gives slow, brush-like waves instead of jitter.
+  // Corners: blur then re-threshold the alpha, which rounds the squared ends by about `soft` units.
+  const useF = wob>0 || soft>0;
+  const filt = useF
+    ? `<filter id="${id}" filterUnits="userSpaceOnUse" x="-20" y="0" width="${maxX+40}" height="${h+40}">
+        <feTurbulence type="fractalNoise" baseFrequency="0.022" numOctaves="1" seed="${seed}" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="${wob}" xChannelSelector="R" yChannelSelector="G" result="d"/>
+        ${soft>0?`<feGaussianBlur in="d" stdDeviation="${soft}" result="b"/><feComponentTransfer in="b"><feFuncA type="linear" slope="8" intercept="-3.5"/></feComponentTransfer>`:""}
+      </filter>`
+    : "";
+  return `<svg class="type" viewBox="0 18 ${Math.max(maxX,1)+4} ${h-2}" xmlns="http://www.w3.org/2000/svg">
+    <defs>${filt}</defs>${metric}
+    <g fill="none" stroke-linecap="square" stroke-linejoin="miter" stroke-miterlimit="2" ${useF?`filter="url(#${id})"`:""}>${ink}</g>${bones}</svg>`;
+}
+
+/* ---------- Page wiring ---------- */
+const $=s=>document.getElementById(s);
+const state={W:13,wob:2.4,soft:1.6,bnc:2,style:"ink",skel:false};
+function draw(){
+  uid=0;
+  const base={...state};
+  $("stage").classList.toggle("dark",state.style==="puff");
+  $("stage").innerHTML=render($("txt").value||"Puff",base);
+  $("mark").innerHTML=render("Puff Hand",{...base,style:"ink",skel:false});
+  $("cPrompt").innerHTML=render("a spoon",{...base,style:"ink",skel:false});
+  $("cBtn").innerHTML=render("Start sketching",{...base,W:Math.min(base.W+1,18),style:"ink",skel:false});
+  $("cPuff").innerHTML=render("Puff!",{...base,style:"puff",skel:false});
+  $("grid").innerHTML=SET.join("").split("").map(ch=>
+    `<div class="cell">${render(ch,{...base,bnc:0})}<code>${ch.replace("&","&amp;")}</code></div>`).join("");
+  $("grid").querySelectorAll("svg").forEach(s=>s.setAttribute("viewBox","-4 14 "+(+s.viewBox.baseVal.width+4)+" 114"));
+}
+[["w","W","wOut",1],["wob","wob","wobOut",1],["soft","soft","softOut",1],["bnc","bnc","bncOut",1]].forEach(([el,key,out])=>{
+  $(el).addEventListener("input",e=>{state[key]=+e.target.value;$(out).textContent=(+e.target.value).toFixed(key==="W"?1:1).replace(/\.0$/,key==="W"?"":".0");draw();});
+});
+$("txt").addEventListener("input",draw);
+function setStyle(s){state.style=s;$("sInk").setAttribute("aria-pressed",s==="ink");$("sPuff").setAttribute("aria-pressed",s==="puff");draw();}
+$("sInk").onclick=()=>setStyle("ink");
+$("sPuff").onclick=()=>setStyle("puff");
+$("skel").onclick=()=>{state.skel=!state.skel;$("skel").setAttribute("aria-pressed",state.skel);draw();};
+$("reroll").onclick=()=>{seed=1+Math.floor(Math.random()*999);draw();};
+draw();
+</script>

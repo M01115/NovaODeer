@@ -1,0 +1,44 @@
+{
+  "name": "Puff Hand",
+  "version": "0.1 draft",
+  "fonts": {
+    "ink": { "family": "Puff Hand", "file": "fonts/PuffHand-Regular.ttf", "use": "Headings, prompt word, buttons" },
+    "inlay": { "family": "Puff Hand Inlay", "file": "fonts/PuffHandInlay-Regular.ttf", "use": "Logo and celebrations, on graphite only", "palettes": ["Puff", "Blush"] },
+    "layers": {
+      "rim": { "family": "Puff Hand Rim", "file": "fonts/layers/PuffHandRim-Regular.ttf" },
+      "top": { "family": "Puff Hand Top", "file": "fonts/layers/PuffHandTop-Regular.ttf" },
+      "belly": { "family": "Puff Hand Belly", "file": "fonts/layers/PuffHandBelly-Regular.ttf" },
+      "use": "Stack rim, then top, then belly in the same position, each in its colour. For React Native and anywhere colour fonts don't work."
+    }
+  },
+  "inlayPalettes": {
+    "Puff":  { "rim": "#F2A21B", "top": "#FFC53D", "belly": "#FFE7A1" },
+    "Blush": { "rim": "#E0507A", "top": "#FF9DB0", "belly": "#FFD9E0" }
+  },
+  "appColors": {
+    "paper": "#FAFAF7",
+    "card": "#FFFFFF",
+    "line": "#E4E4DD",
+    "pill": "#F0F0EA",
+    "graphite": "#2B2D33",
+    "pencil": "#83868D",
+    "puff": "#FFC53D",
+    "belly": "#FFE7A1",
+    "blush": "#FF9DB0",
+    "blushDeep": "#E0507A"
+  },
+  "metrics": {
+    "unitsPerEm": 1000,
+    "capHeight": 740,
+    "xHeight": 540,
+    "ascender": 860,
+    "descender": -260,
+    "lineHeight": 1.12
+  },
+  "rules": [
+    "Ink style is graphite. On blush buttons keep graphite text.",
+    "Inlay style goes on graphite only. Never yellow text on white.",
+    "One yellow thing per screen: Puff, or the inlay wordmark, not both at full size.",
+    "Body copy stays in Nunito. Puff Hand is for short display text."
+  ]
+}

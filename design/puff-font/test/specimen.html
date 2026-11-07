@@ -1,0 +1,32 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Puff Hand test</title>
+<link rel="stylesheet" href="../web/puff-hand.css">
+<style>
+  body{margin:0;padding:32px;background:#FAFAF7;font-family:system-ui,sans-serif;color:#2B2D33;display:flex;flex-direction:column;gap:22px}
+  .lbl{font:700 12px system-ui;letter-spacing:.08em;text-transform:uppercase;color:#83868D;margin-bottom:6px}
+  .dark{background:#2B2D33;border-radius:20px;padding:22px 26px;display:flex;gap:40px;align-items:center;flex-wrap:wrap}
+  .stack{position:relative;font-size:72px;line-height:1.12}
+  .stack span{display:block}
+  .stack span+span{position:absolute;inset:0}
+  .btn{display:inline-block;background:#FF9DB0;border:2.5px solid #2B2D33;box-shadow:0 4px 0 #2B2D33;border-radius:16px;padding:10px 22px;font-size:28px}
+</style>
+<div><div class="lbl">Puff Hand, ink</div>
+  <div class="puff-ink" style="font-size:64px">Today everyone draws<br>a spoon!</div></div>
+<div class="puff-ink" style="font-size:34px">abcdefghijklmnopqrstuvwxyz<br>ABCDEFGHIJKLMNOPQRSTUVWXYZ<br>0123456789 . , ! ? ' : - &amp;</div>
+<div><span class="btn puff-ink">Start sketching</span></div>
+<div class="lbl">Puff Hand Inlay (colour font), Puff and Blush palettes / three stacked layer fonts</div>
+<div class="dark">
+  <div class="puff-inlay" style="font-size:72px">Puff!</div>
+  <div class="puff-inlay blush" style="font-size:72px">Nice one</div>
+  <div class="stack">
+    <span style="font-family:'Puff Hand Rim';color:#F2A21B">Puff!</span>
+    <span style="font-family:'Puff Hand Top';color:#FFC53D">Puff!</span>
+    <span style="font-family:'Puff Hand Belly';color:#FFE7A1">Puff!</span>
+  </div>
+</div>
+<style>
+  @font-face{font-family:"Puff Hand Rim";src:url(../fonts/layers/PuffHandRim-Regular.woff2) format("woff2")}
+  @font-face{font-family:"Puff Hand Top";src:url(../fonts/layers/PuffHandTop-Regular.woff2) format("woff2")}
+  @font-face{font-family:"Puff Hand Belly";src:url(../fonts/layers/PuffHandBelly-Regular.woff2) format("woff2")}
+</style>
