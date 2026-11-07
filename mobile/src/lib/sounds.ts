@@ -1,5 +1,4 @@
 import { type AudioPlayer, createAudioPlayer, setAudioModeAsync } from 'expo-audio';
-import { Platform } from 'react-native';
 
 /**
  * Puff's sound kit (Morris's morris/puff-sounds branch: synthesized sea sounds in D major
@@ -62,64 +61,8 @@ function player(id: SoundId) {
   return p;
 }
 
-/*
- * Browsers (Chrome, and phone browsers even more so) block audio until the first tap.
- * - A sound asked for before that tap (the launch chime) waits, and plays on a tap that
- *   comes within a few seconds instead of being silently dropped.
- * - On that first tap every sound is started silently and stopped at once. Phone browsers
- *   (iPhone Safari) only let a sound play later from a timer (countdown ticks, time up,
- *   Puff's "aha", the streak) if it already played once during a tap.
- * The native app (Expo Go / a build) has no such limit.
- */
-const IS_WEB = Platform.OS === 'web';
-const PENDING_MS = 12000;
-let unlocked = !IS_WEB;
-let pending: { id: SoundId; at: number } | null = null;
-
-function canPlayNow() {
-  if (unlocked) return true;
-  const activation = (globalThis.navigator as Navigator & { userActivation?: { hasBeenActive: boolean } })
-    ?.userActivation;
-  if (activation?.hasBeenActive) unlocked = true;
-  return unlocked;
-}
-
-/** Runs once, on the first tap or key press. */
-function unlockAll() {
-  unlocked = true;
-  (Object.keys(SOURCES) as SoundId[]).forEach((id) => {
-    try {
-      const p = player(id);
-      if (p.playing) return;
-      // Silent and left to finish (they're short): stopping it early would cancel the play()
-      // the browser needs to see complete inside this tap. playSound() sets the volume again.
-      p.volume = 0;
-      p.loop = false;
-      p.play();
-    } catch {}
-  });
-  const waiting = pending;
-  pending = null;
-  if (waiting && Date.now() - waiting.at < PENDING_MS) setTimeout(() => playSound(waiting.id), 60);
-}
-
-if (IS_WEB && typeof window !== 'undefined') {
-  const onFirstGesture = () => {
-    window.removeEventListener('pointerdown', onFirstGesture, true);
-    window.removeEventListener('keydown', onFirstGesture, true);
-    unlockAll();
-  };
-  window.addEventListener('pointerdown', onFirstGesture, true);
-  window.addEventListener('keydown', onFirstGesture, true);
-}
-
 /** Plays a sound from the start. Never throws: sound is a nice-to-have. */
 export function playSound(id: SoundId, { rate = 1, volume = 1 }: { rate?: number; volume?: number } = {}) {
-  if (!canPlayNow()) {
-    // Before the first tap in a browser: hold it (see above) rather than lose it.
-    pending = { id, at: Date.now() };
-    return;
-  }
   try {
     const p = player(id);
     p.loop = false;
@@ -134,7 +77,6 @@ export function playSound(id: SoundId, { rate = 1, volume = 1 }: { rate?: number
 
 /** Starts a looping sound (e.g. while waiting for the AI). */
 export function startLoop(id: SoundId, volume = 1) {
-  if (!canPlayNow()) return;
   try {
     const p = player(id);
     p.loop = true;
