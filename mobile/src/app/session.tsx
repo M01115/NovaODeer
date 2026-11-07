@@ -10,7 +10,9 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Ink, nunito, Spacing } from '@/constants/theme';
 import { DEFAULT_SECONDS, formatDuration, getPromptForDate } from '@/data/prompts';
+import { toDateKey } from '@/data/history';
 import { PICK_ERRORS, pickSketch } from '@/data/submission';
+import { markPostedToday } from '@/data/today';
 import { ChunkyButton } from '@/components/chunky-button';
 import { useTheme } from '@/hooks/use-theme';
 import { playSound, type SoundId } from '@/lib/sounds';
@@ -24,7 +26,14 @@ type Phase = 'setup' | 'running' | 'paused' | 'done';
 async function scanSketch(source: 'camera' | 'library', seconds: number) {
   const picked = await pickSketch(source, Math.round(seconds));
   if (picked.ok) {
-    router.push('/feedback');
+    // Post now: the streak celebration comes first, then Puff's feedback, then the feed.
+    markPostedToday({
+      id: toDateKey(new Date()),
+      seconds: picked.submission.seconds,
+      image: picked.submission.image,
+      medium: picked.submission.medium === 'paper' ? 'paper' : 'upload',
+    });
+    router.replace('/complete');
     return;
   }
   const message = PICK_ERRORS[picked.reason];
@@ -168,7 +177,9 @@ export default function SessionScreen() {
     } else if (overtime) {
       line = 'Snap it whenever you’re ready.';
     } else if (remaining > 60) {
-      line = 'Ooh, I can hear the pencil…';
+      // Puff draws his own version alongside you (Morris's "drawing along").
+      mood = 'drawing';
+      line = 'I’m drawing one too. Take your time.';
     } else if (remaining > 30) {
       mood = 'squint';
       line = total > 60 ? 'One minute left!' : 'Ooh, I can hear the pencil…';
@@ -202,7 +213,10 @@ export default function SessionScreen() {
       </View>
 
       <View style={styles.mascotArea}>
-        <Smudge size={130} mood={mood} inflate={inflate} animated />
+        {/* Room underneath for Puff's drawing pad (drawing along), clear of the bubble. */}
+        <View style={styles.puff}>
+          <Smudge size={150} mood={mood} inflate={inflate} animated />
+        </View>
         <ThemedView type="backgroundElement" style={styles.bubble}>
           <ThemedText type="small" style={styles.center}>
             {line}
@@ -318,6 +332,9 @@ const styles = StyleSheet.create({
     fontFamily: nunito(400),
     fontSize: 20,
     lineHeight: 26,
+  },
+  puff: {
+    marginBottom: 14,
   },
   mascotArea: {
     flexGrow: 1,

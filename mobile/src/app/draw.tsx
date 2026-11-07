@@ -1,18 +1,21 @@
 import { router } from 'expo-router';
 import { type ComponentRef, useEffect, useMemo, useRef, useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import Animated, { useAnimatedProps, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { captureRef } from 'react-native-view-shot';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { ChunkyButton } from '@/components/chunky-button';
 import { CloseButton } from '@/components/close-button';
+import { ColorWheel } from '@/components/color-wheel';
 import { Smudge } from '@/components/smudge';
 import { Colors, Ink, nunito } from '@/constants/theme';
 import { DEFAULT_SECONDS, getPromptForDate } from '@/data/prompts';
+import { toDateKey } from '@/data/history';
+import { setSubmission } from '@/data/submission';
 import { markPostedToday } from '@/data/today';
 import { playSound } from '@/lib/sounds';
 
@@ -21,6 +24,11 @@ const AnimatedPath = Animated.createAnimatedComponent(Path);
 /** Pencils to pick from: graphite and two soft colours. */
 const INKS = ['#2B2D33', '#E8354E', '#4F86F7'];
 const WIDTHS = { thin: 3, thick: 7 };
+/** The eraser paints in the page's own white, wider than a pencil. */
+const PAPER = '#FFFFFF';
+const ERASER_WIDTHS = { thin: 18, thick: 34 };
+/** Rainbow ring for the colour-wheel button. */
+const RAINBOW = ['#FF4D4D', '#FFB000', '#FFE02D', '#4CD964', '#18B4F0', '#7A5CFF', '#FF5AC8'];
 
 type Stroke = { d: string; color: string; width: number };
 
@@ -31,7 +39,8 @@ function formatClock(totalSeconds: number) {
 
 /**
  * Draw on the phone (from the timer screen's "Draw on my phone"): a white page to sketch on
- * with your finger, a few pencils, undo and clear, and the same countdown as on paper.
+ * with your finger, quick colours plus a colour wheel for any colour, pencil width, an
+ * eraser, undo and clear, and the same countdown as on paper.
  * "I'm done" saves the page as an image and posts it like a scanned sketch.
  */
 export default function DrawScreen() {
@@ -53,6 +62,13 @@ export default function DrawScreen() {
   const [strokes, setStrokes] = useState<Stroke[]>([]);
   const [color, setColor] = useState(INKS[0]);
   const [thick, setThick] = useState(false);
+  const [tool, setTool] = useState<'pen' | 'eraser'>('pen');
+  const [wheelOpen, setWheelOpen] = useState(false);
+  const erasing = tool === 'eraser';
+  const pickColor = (c: string) => {
+    setColor(c);
+    setTool('pen');
+  };
   const [saving, setSaving] = useState(false);
   // Clearing the page: Puff deflates sheepishly for a moment.
   const [deflated, setDeflated] = useState(false);
@@ -62,15 +78,17 @@ export default function DrawScreen() {
     return () => clearTimeout(id);
   }, [deflated]);
   const pageRef = useRef<ComponentRef<typeof View>>(null);
+  const pageSize = useRef<{ width: number; height: number } | null>(null);
 
   // The stroke being drawn lives on the UI thread so the line follows the finger without lag.
   const live = useSharedValue('');
   const lastX = useSharedValue(0);
   const lastY = useSharedValue(0);
-  const width = thick ? WIDTHS.thick : WIDTHS.thin;
+  const width = erasing ? (thick ? ERASER_WIDTHS.thick : ERASER_WIDTHS.thin) : thick ? WIDTHS.thick : WIDTHS.thin;
+  const ink = erasing ? PAPER : color;
 
   const commit = (d: string) => {
-    setStrokes((s) => [...s, { d, color, width }]);
+    setStrokes((s) => [...s, { d, color: ink, width }]);
     live.set('');
   };
 
@@ -106,12 +124,23 @@ export default function DrawScreen() {
       image = await captureRef(pageRef, {
         format: 'png',
         quality: 1,
-        result: Platform.OS === 'web' ? 'data-uri' : 'tmpfile',
+        // A data URI everywhere: shown in the feed and sent to Puff's AI feedback.
+        result: 'data-uri',
       });
     } catch {
       // Still count the sketch if the snapshot fails.
     }
-    markPostedToday({ seconds: elapsed, image });
+    markPostedToday({ id: toDateKey(new Date()), seconds: elapsed, image, medium: 'app' });
+    if (image && pageSize.current) {
+      setSubmission({
+        image,
+        width: pageSize.current.width,
+        height: pageSize.current.height,
+        medium: 'app',
+        seconds: Math.round(elapsed),
+        prompt: prompt.text,
+      });
+    }
     router.replace('/complete');
   };
 
@@ -135,7 +164,13 @@ export default function DrawScreen() {
       {/* The page */}
       <View style={styles.paperWrap}>
         <GestureDetector gesture={pan}>
-          <View ref={pageRef} collapsable={false} style={styles.paper}>
+          <View
+            ref={pageRef}
+            collapsable={false}
+            style={styles.paper}
+            onLayout={(e) => {
+              pageSize.current = e.nativeEvent.layout;
+            }}>
             <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
               {strokes.map((s, i) => (
                 <Path
@@ -150,7 +185,7 @@ export default function DrawScreen() {
               ))}
               <AnimatedPath
                 animatedProps={liveProps}
-                stroke={color}
+                stroke={ink}
                 strokeWidth={width}
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -164,6 +199,23 @@ export default function DrawScreen() {
             )}
           </View>
         </GestureDetector>
+        {wheelOpen && (
+          <View style={styles.wheelPanel}>
+            <ColorWheel value={color} onChange={pickColor} />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Done picking a colour"
+              onPress={() => {
+                playSound('tab');
+                setWheelOpen(false);
+              }}
+              hitSlop={6}
+              style={styles.wheelDone}>
+              <View style={[styles.wheelChosen, { backgroundColor: color }]} />
+              <Text style={styles.wheelDoneText}>Use this colour</Text>
+            </Pressable>
+          </View>
+        )}
         <View pointerEvents="none" style={styles.mascot}>
           <Smudge size={64} mood={saving ? 'rolling' : deflated ? 'deflate' : overtime ? 'happy' : 'squint'} animated />
         </View>
@@ -176,15 +228,34 @@ export default function DrawScreen() {
             key={c}
             accessibilityRole="button"
             accessibilityLabel={`Pencil colour ${c}`}
-            accessibilityState={{ selected: color === c }}
+            accessibilityState={{ selected: !erasing && color === c }}
             onPress={() => {
               playSound('tab');
-              setColor(c);
+              pickColor(c);
+              setWheelOpen(false);
             }}
             hitSlop={6}
-            style={[styles.swatch, { backgroundColor: c }, color === c && styles.swatchOn]}
+            style={[styles.swatch, { backgroundColor: c }, !erasing && color === c && styles.swatchOn]}
           />
         ))}
+        {/* Any colour: opens the colour wheel. Shows the current colour inside a rainbow ring. */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Pick any colour"
+          accessibilityState={{ expanded: wheelOpen }}
+          onPress={() => {
+            playSound('tab');
+            setWheelOpen((o) => !o);
+          }}
+          hitSlop={6}
+          style={[styles.wheelButton, wheelOpen && styles.toolOn]}>
+          <Svg width={30} height={30} viewBox="0 0 30 30">
+            {RAINBOW.map((c, i) => (
+              <Path key={c} d={rainbowSlice(i)} fill={c} />
+            ))}
+            <Circle cx={15} cy={15} r={8} fill={erasing ? '#FFFFFF' : color} stroke="#FFFFFF" strokeWidth={2.5} />
+          </Svg>
+        </Pressable>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={thick ? 'Thin pencil' : 'Thick pencil'}
@@ -194,7 +265,29 @@ export default function DrawScreen() {
           }}
           hitSlop={6}
           style={styles.tool}>
-          <View style={[styles.widthDot, { width: thick ? 14 : 7, height: thick ? 14 : 7, backgroundColor: color }]} />
+          <View
+            style={[
+              styles.widthDot,
+              { width: thick ? 14 : 7, height: thick ? 14 : 7, backgroundColor: erasing ? '#B9B5AC' : color },
+            ]}
+          />
+        </Pressable>
+        {/* Eraser: paints the page white again. */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Eraser"
+          accessibilityState={{ selected: erasing }}
+          onPress={() => {
+            playSound('tab');
+            setTool((t) => (t === 'eraser' ? 'pen' : 'eraser'));
+            setWheelOpen(false);
+          }}
+          hitSlop={6}
+          style={[styles.tool, erasing && styles.toolOn]}>
+          <Svg width={22} height={22} viewBox="0 0 22 22">
+            <Rect x={3} y={7} width={16} height={9} rx={2.5} fill="#FFFFFF" stroke={Ink.ink} strokeWidth={1.8} transform="rotate(-35 11 11)" />
+            <Rect x={3} y={7} width={7} height={9} rx={2.5} fill="#FFA9D4" stroke={Ink.ink} strokeWidth={1.8} transform="rotate(-35 11 11)" />
+          </Svg>
         </Pressable>
         <View style={styles.spacer} />
         <Pressable
@@ -227,6 +320,14 @@ export default function DrawScreen() {
       <ChunkyButton label={saving ? 'Saving…' : 'I’m done'} onPress={done} sound="snap" />
     </View>
   );
+}
+
+/** One slice of the rainbow ring on the colour-wheel button (30x30 box, radius 14). */
+function rainbowSlice(i: number) {
+  const a0 = (i / RAINBOW.length) * 2 * Math.PI - Math.PI / 2;
+  const a1 = ((i + 1) / RAINBOW.length) * 2 * Math.PI - Math.PI / 2 + 0.05;
+  const p = (a: number) => `${(15 + 14 * Math.cos(a)).toFixed(2)} ${(15 + 14 * Math.sin(a)).toFixed(2)}`;
+  return `M15 15 L${p(a0)} A14 14 0 0 1 ${p(a1)} Z`;
 }
 
 const styles = StyleSheet.create({
@@ -304,7 +405,7 @@ const styles = StyleSheet.create({
   tools: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 9,
   },
   swatch: {
     width: 28,
@@ -326,6 +427,56 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  toolOn: {
+    backgroundColor: '#FFE7F3',
+    transform: [{ scale: 1.08 }],
+  },
+  wheelButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 2,
+    borderColor: Ink.ink,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  wheelPanel: {
+    position: 'absolute',
+    left: 12,
+    bottom: 12,
+    padding: 16,
+    gap: 14,
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: Ink.ink,
+    boxShadow: '0 10px 30px rgba(0, 0, 0, 0.18)',
+  },
+  wheelDone: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 2,
+    borderColor: Ink.ink,
+    backgroundColor: '#FFA9D4',
+  },
+  wheelChosen: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: Ink.ink,
+  },
+  wheelDoneText: {
+    color: Ink.ink,
+    fontSize: 14,
+    fontFamily: nunito(800),
   },
   toolOff: {
     opacity: 0.35,

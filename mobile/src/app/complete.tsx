@@ -21,6 +21,7 @@ import { StreakFlame } from '@/components/streak-flame';
 import { StreakShrimp } from '@/components/streak-shrimp';
 import { Colors, Ink, nunito } from '@/constants/theme';
 import { getHistory, getStreak, toDateKey, type DayStatus } from '@/data/history';
+import { getSubmission, takeFeedbackPending } from '@/data/submission';
 import { playSound } from '@/lib/sounds';
 
 const ORANGE = '#FF9600';
@@ -119,6 +120,8 @@ export default function CompleteScreen() {
     return () => clearTimeout(cont);
   }, [lit]);
 
+  // Whether CONTINUE leads to Puff's feedback (a scanned or drawn sketch) or the feed.
+  const [feedbackNext] = useState(() => !!getSubmission());
   const barStyle = useAnimatedStyle(() => ({ transform: [{ scaleX: progress.get() }] }));
   const streak = lit ? before + 1 : before;
 
@@ -198,7 +201,15 @@ export default function CompleteScreen() {
       <View style={styles.continueSlot}>
         {showContinue && (
           <Animated.View entering={FadeInDown.duration(260).reduceMotion(ReduceMotion.System)}>
-            <ChunkyButton label="CONTINUE" sound="unlock-feed" onPress={() => router.dismissTo('/')} />
+            <ChunkyButton
+              label="CONTINUE"
+              sound={feedbackNext ? 'tap' : 'unlock-feed'}
+              onPress={() => {
+                // Puff's feedback comes next (once per sketch), then the friends' feed.
+                if (takeFeedbackPending()) router.replace('/feedback');
+                else router.dismissTo('/');
+              }}
+            />
           </Animated.View>
         )}
       </View>

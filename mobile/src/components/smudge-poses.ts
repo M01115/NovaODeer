@@ -58,13 +58,18 @@ export type FxName =
   | 'confetti'
   | 'zzz'
   | 'bang'
-  | 'boom';
+  | 'boom'
+  | 'drawpad';
 
 export type Pose = {
   mouth: Mouth;
   fx?: FxName[];
   mover?: Part;
   squash?: Part;
+  /** Where the squash layer pivots (PSD px), if not at Puff's base. */
+  squashOrigin?: [number, number];
+  /** Pencil held in his mouth (drawing along). */
+  pencil?: boolean;
   puffer?: Part;
   spk?: Part;
   /** Orange flush over the body (angry, about to pop). Opacity. */
@@ -118,7 +123,8 @@ export type PuffMood =
   | 'proud'
   | 'sleepy'
   | 'explode'
-  | 'overtime';
+  | 'overtime'
+  | 'drawing';
 
 const a = (ms: number, f: Frames, opts: Omit<Anim, 'f' | 'ms'> = {}): Anim => ({ ms, f, ...opts });
 
@@ -644,6 +650,49 @@ export function getPose(mood: PuffMood, inflate = 0): Pose {
         blush: { still: { o: 0.85 } },
       };
 
+    case 'drawing':
+      // Morris's "Drawing along" (4 s loop): pencil in his mouth, scribbling on a pad while a
+      // tiny Puff doodle appears stroke by stroke; near the end he peeks up at you and the
+      // page flips. For the sketch timer while there's plenty of time.
+      return {
+        mouth: 'tight',
+        fx: ['drawpad'],
+        pencil: true,
+        mover: {
+          still: { r: 2 },
+          anim: a(4000, [
+            [[0, 100], { x: 0, r: 2 }],
+            [40, { x: 14, r: 4 }],
+            [70, { x: -8, r: 1 }],
+          ]),
+        },
+        squashOrigin: [1240, 1280],
+        squash: {
+          anim: a(
+            320,
+            [
+              [[0, 100], { x: 0, y: 0, r: 0 }],
+              [25, { x: 6, y: 3, r: 1.6 }],
+              [50, { x: -4, y: 5, r: -0.8 }],
+              [75, { x: 3, y: -2, r: 1 }],
+            ],
+            { ease: 'linear' }
+          ),
+        },
+        pupil: {
+          still: { x: 20, y: 30 },
+          anim: a(4000, [
+            [[0, 74], { x: 20, y: 30 }],
+            [[79, 88], { x: 10, y: -6 }],
+            [[93, 100], { x: 20, y: 30 }],
+          ]),
+        },
+        lu: 0.22,
+        ll: -0.12,
+        blink: 4000,
+        fin: { anim: wave(500, 0, -14) },
+      };
+
     case 'sleepy':
       return {
         mouth: 'o',
@@ -822,6 +871,27 @@ export const GHOST = {
     [[65, 72], { x: 26 }],
     [[76, 100], { x: 0 }],
   ]),
+};
+
+/** The drawing pad: lifts and tilts as the page flips at the end of each loop. */
+export const PAD_FLIP = a(4000, [
+  // o: 1 throughout: effects start hidden and their animation shows them.
+  [[0, 84], { y: 0, r: 0, o: 1 }],
+  [88, { y: -8, r: -3, o: 1 }],
+  [[93, 100], { y: 0, r: 0, o: 1 }],
+]);
+/** Doodle stroke i appears in turn, stays, then the page clears (4 s loop, linear). */
+export const doodleStroke = (i: number) => {
+  const on = 6 + i * 4.2;
+  return a(
+    4000,
+    [
+      [[0, on], { o: 0 }],
+      [[on + 1.5, 84], { o: 1 }],
+      [[87, 100], { o: 0 }],
+    ],
+    { ease: 'linear' }
+  );
 };
 
 export const FX_ANIMS = {

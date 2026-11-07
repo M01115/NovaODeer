@@ -9,6 +9,7 @@ import { type Outfit, useOutfit } from '@/data/outfit';
 import {
   type Anim,
   DEFAULTS,
+  doodleStroke,
   FX_ANIMS,
   type Frames,
   type FxName,
@@ -16,6 +17,7 @@ import {
   GHOST,
   type Mouth,
   type Part,
+  PAD_FLIP,
   type PuffMood,
   type V,
 } from './smudge-poses';
@@ -253,6 +255,8 @@ export function Smudge({
       mouth: pose.mouth,
       mover: ps(pose.mover),
       squash: ps(pose.squash),
+      squashOrigin: pose.squashOrigin ?? ([930, 1525] as [number, number]),
+      pencil: !!pose.pencil,
       puffer: [ps(pose.puffer), smooth],
       spk: ps(pose.spk),
       flush: pose.flush ? [ps(pose.flush), smooth] : undefined,
@@ -279,7 +283,7 @@ export function Smudge({
   return (
     <View style={{ width: size, height: size * 1.12 }} accessibilityLabel="Mascot">
       <Animated.View style={[canvas, { transformOrigin: origin(930, 1100) }, s.mover]}>
-        <Animated.View style={[canvas, { transformOrigin: origin(930, 1525) }, s.squash]}>
+        <Animated.View style={[canvas, { transformOrigin: origin(...s.squashOrigin) }, s.squash]}>
           <Animated.View style={[at(PARTS.tail, k), s.tailwrap]}>
             <Animated.View style={[StyleSheet.absoluteFill, { transformOrigin: '88% 12%' }, s.tail]}>
               <Layer source={IMG.tail} />
@@ -309,6 +313,7 @@ export function Smudge({
             )}
 
             <MouthView mouth={s.mouth} k={k} />
+            {s.pencil && <Pencil k={k} />}
 
             {outfit.eyes === 'glasses' && (
               <Animated.View style={[at(PARTS.glasses, k), s.glasses]}>
@@ -505,6 +510,25 @@ const MOUTHS: Record<Mouth, ReactNode> = {
   ),
 };
 
+/** The pencil Puff holds in his mouth while drawing along (Morris's design). */
+const PENCIL_BOX: R = [1236 - 40, 1272 - 40, 220, 360];
+function Pencil({ k }: { k: number }) {
+  const ink = '#161616';
+  return (
+    <View style={at(PENCIL_BOX, k)} pointerEvents="none">
+      <Svg width="100%" height="100%" viewBox={PENCIL_BOX.join(' ')}>
+        <G transform="translate(1236 1272) rotate(66)">
+          <Rect x={0} y={-17} width={42} height={34} rx={8} fill="#FFA9D4" stroke={ink} strokeWidth={7} />
+          <Rect x={40} y={-17} width={18} height={34} fill="#C9BFB0" stroke={ink} strokeWidth={7} />
+          <Rect x={56} y={-17} width={206} height={34} fill="#FFD21F" stroke={ink} strokeWidth={7} />
+          <Path d="M262 -17 L306 0 L262 17 Z" fill="#F6D7A7" stroke={ink} strokeWidth={7} strokeLinejoin="round" />
+          <Path d="M296 -5 L320 0 L296 5 Z" fill={ink} />
+        </G>
+      </Svg>
+    </View>
+  );
+}
+
 const MOUTH_AT = { cx: 1214, cy: 1257, half: 170 };
 function MouthView({ mouth, k }: { mouth: Mouth; k: number }) {
   const { cx, cy, half } = MOUTH_AT;
@@ -583,7 +607,55 @@ const burstPoints = (cx: number, cy: number, R: number, r: number, n: number) =>
     return `${(cx + Math.cos(ang) * rr).toFixed(0)},${(cy + Math.sin(ang) * rr).toFixed(0)}`;
   }).join(' ');
 
+// The drawing pad (Morris's "drawpad"): a spiral notepad where a tiny Puff doodle appears
+// stroke by stroke. All parts share one box so the strokes line up with the page.
+const PAD_BOX: R = [1218, 1468, 420, 320];
+const PAD_T = 'translate(-44 -14) rotate(-5 1448 1633)';
+const PAD_INK = '#161616';
+const DOODLE: ReactNode[] = (() => {
+  const cx = 1440;
+  const cy = 1626;
+  const r = 48;
+  const out: ReactNode[] = [];
+  const pt = (rr: number, deg: number) => {
+    const a = (deg * Math.PI) / 180;
+    return `${(cx + rr * Math.cos(a)).toFixed(1)} ${(cy + rr * Math.sin(a)).toFixed(1)}`;
+  };
+  for (let i = 0; i < 8; i++) out.push(<Path d={`M${pt(r, -180 + i * 45)} A${r} ${r} 0 0 1 ${pt(r, -180 + (i + 1) * 45)}`} fill="none" />);
+  out.push(<Path d={`M${cx - r} ${cy} L${cx - r - 28} ${cy - 22} L${cx - r - 28} ${cy + 22} Z`} fill="none" strokeLinejoin="round" />);
+  out.push(<Circle cx={cx + 14} cy={cy - 10} r={6} fill={PAD_INK} />, <Circle cx={cx + 32} cy={cy - 13} r={6} fill={PAD_INK} />);
+  for (const d of [-150, -120, -90, -60, -30]) out.push(<Path d={`M${pt(r + 4, d)} L${pt(r + 20, d)}`} />);
+  return out;
+})();
+const DRAWPAD: FxItem[] = [
+  {
+    box: PAD_BOX,
+    anim: PAD_FLIP,
+    svg: (
+      <G transform={PAD_T}>
+        <Rect x={1298} y={1536} width={320} height={214} rx={6} fill="#EFE5D6" stroke={PAD_INK} strokeWidth={6} />
+        <Rect x={1288} y={1526} width={320} height={214} rx={6} fill="#FFFFFF" stroke={PAD_INK} strokeWidth={7} />
+        <G stroke={PAD_INK} strokeWidth={5}>
+          {Array.from({ length: 10 }, (_, i) => (
+            <Circle key={i} cx={1312 + i * 30} cy={1526} r={9} fill="none" />
+          ))}
+        </G>
+      </G>
+    ),
+  },
+  ...DOODLE.map((stroke, i) => ({
+    box: PAD_BOX,
+    anim: doodleStroke(i),
+    svg: (
+      <G transform={PAD_T} stroke={PAD_INK} strokeWidth={7} strokeLinecap="round">
+        {stroke}
+      </G>
+    ),
+  })),
+];
+
 const FX: Record<FxName, FxItem[]> = {
+  drawpad: DRAWPAD,
   sparkles: [
     { box: starBox(1500, 720, 46), svg: star(1500, 720, 46), anim: FX_ANIMS.twinkle(0) },
     { box: starBox(420, 760, 36), svg: star(420, 760, 36), anim: FX_ANIMS.twinkle(-500) },

@@ -42,15 +42,15 @@ function localDayNumber(date: Date): number {
 }
 
 /**
- * Today's prompt, pinned for the demo: Brad Pitt is "today" whichever day the app is
+ * Today's prompt, pinned for the demo: the deer is "today" whichever day the app is
  * opened. Other days follow the rotation below.
  */
 export const TODAY_PROMPT: Prompt = {
-  id: 'brad-pitt',
-  text: 'Brad Pitt',
-  emoji: '🎬',
-  brief: 'Draw a loose head-and-shoulders portrait of Brad Pitt.',
-  seconds: 300,
+  id: 'deer',
+  text: 'A deer',
+  emoji: '🦌',
+  brief: 'A quick 30-second deer: just the big shapes, antlers and legs.',
+  seconds: 30,
 };
 
 export function getPromptForDate(date: Date = new Date()): Prompt {

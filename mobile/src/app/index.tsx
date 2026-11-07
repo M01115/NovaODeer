@@ -59,13 +59,15 @@ export default function HomeScreen() {
   // Each prompt comes with its own time (30s / 2 min / 5 min, by difficulty).
   const seconds = today?.prompt.seconds ?? DEFAULT_SECONDS;
 
-  // On landing, celebrate the streak first.
+  // On landing, celebrate the streak first (not once today's sketch is posted: the
+  // posting celebration already did).
+  const postedToday = !!posted;
   useFocusEffect(
     useCallback(() => {
-      if (streakShownThisLaunch) return;
+      if (streakShownThisLaunch || postedToday) return;
       streakShownThisLaunch = true;
       router.push('/streak');
-    }, [])
+    }, [postedToday])
   );
 
   // Archive layer. `drag` is how far Home has moved down: 0 = Home, screenH = archive.

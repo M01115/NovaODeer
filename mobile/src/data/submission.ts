@@ -25,9 +25,27 @@ export type Submission = {
 };
 
 let current: Submission | null = null;
+/** True from posting until Puff's feedback screen has been shown for this sketch. */
+let feedbackPending = false;
 
 export function getSubmission() {
   return current;
+}
+
+/** A sketch drawn in the app (already a data URI), so Puff can give feedback on it too. */
+export function setSubmission(submission: Submission) {
+  current = submission;
+  feedbackPending = true;
+}
+
+/**
+ * The streak celebration's CONTINUE asks this: true once per posted sketch, meaning "show
+ * Puff's feedback next" (then the friends' feed). After that, CONTINUE goes straight on.
+ */
+export function takeFeedbackPending() {
+  const was = feedbackPending && !!current;
+  feedbackPending = false;
+  return was;
 }
 
 /** Longest side sent to the AI. Plenty for a sketch, small enough to upload fast. */
@@ -87,6 +105,7 @@ export async function pickSketch(
       seconds,
       prompt: getPromptForDate().text,
     };
+    feedbackPending = true;
     return { ok: true, submission: current };
   } catch {
     return { ok: false, reason: 'failed' };

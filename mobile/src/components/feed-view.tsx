@@ -151,7 +151,17 @@ function PostedFeed({
         </View>
       </View>
 
-      {/* Friends' sketches */}
+      {/* Friends' sketches (only of today's prompt), or a friendly note when none are in yet. */}
+      {friends.length === 0 && (
+        <ThemedView type="backgroundElement" style={styles.noFriends}>
+          <ThemedText type="smallBold" style={styles.center}>
+            Your friends haven’t posted their {promptText.toLowerCase().replace(/^an? /, '')} yet.
+          </ThemedText>
+          <ThemedText type="small" themeColor="textSecondary" style={styles.center}>
+            Their sketches show up here as soon as they do.
+          </ThemedText>
+        </ThemedView>
+      )}
       <View style={styles.grid}>
         {friends.map((f) => (
           <Pressable
@@ -297,6 +307,12 @@ function useFeedbackMoment(posted: PostedSketch, text: string) {
 }
 
 const styles = StyleSheet.create({
+  noFriends: {
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.four,
+    borderRadius: Spacing.three,
+    gap: Spacing.one,
+  },
   hiddenText: {
     opacity: 0,
   },

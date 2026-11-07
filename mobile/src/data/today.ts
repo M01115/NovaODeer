@@ -18,13 +18,23 @@ export type PostedSketch = {
   /** Puff's feedback on the sketch (from the AI). */
   feedback?: string;
   /** How it was made: photographed paper, or uploaded from photos. */
-  medium?: 'paper' | 'upload';
+  medium?: 'paper' | 'upload' | 'app';
   /** Smudge's structured analysis (2 compliments + 1 tip, with annotation boxes). */
   analysis?: SketchAnalysis;
 };
 
 let posted: PostedSketch | null = null;
 const listeners = new Set<() => void>();
+
+/**
+ * Adds to today's post after it's up: Puff's feedback arrives on the feedback screen, which
+ * comes after the streak celebration (and a retake there can swap the image).
+ */
+export function updatePostedToday(change: Partial<PostedSketch>) {
+  if (!posted) return;
+  posted = { ...posted, ...change };
+  listeners.forEach((l) => l());
+}
 
 export function markPostedToday(sketch: PostedSketch) {
   posted = sketch;

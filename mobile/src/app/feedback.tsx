@@ -40,7 +40,7 @@ import {
 } from '@/data/submission';
 import { toDateKey } from '@/data/history';
 import { useMascotName } from '@/data/outfit';
-import { markPostedToday } from '@/data/today';
+import { updatePostedToday } from '@/data/today';
 import { useTheme } from '@/hooks/use-theme';
 import { playSound } from '@/lib/sounds';
 
@@ -62,13 +62,16 @@ const LOOKING_LINES = [
 ];
 
 /**
- * After a sketch session: preview the photo, send it to Puff, then explore the
- * feedback. Puff circles details it liked; tap a circle or a note to switch between them.
+ * Puff's feedback on today's sketch. Shown after the streak celebration (the sketch is
+ * already posted) and before the friends' feed: Puff starts looking straight away, circles
+ * details he liked (tap a circle or a note to switch), and his notes are added to today's
+ * post. Every path leads on to the feed, so an AI hiccup never blocks anyone.
  */
 export default function FeedbackScreen() {
   const name = useMascotName();
   const [submission, setSubmission] = useState<Submission | null>(getSubmission);
-  const [phase, setPhase] = useState<Phase>({ name: 'preview' });
+  // Starts looking right away: the sketch was posted before the streak celebration.
+  const [phase, setPhase] = useState<Phase>(() => (getSubmission() ? { name: 'loading' } : { name: 'preview' }));
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const requestId = useRef(0);
 
@@ -96,6 +99,39 @@ export default function FeedbackScreen() {
     };
   }, [phase.name]);
 
+  /** Asks Puff about `sketch`; the screen must already show the loading state. */
+  const analyze = async (sketch: Submission) => {
+    const id = ++requestId.current;
+    setSelectedId(null);
+    const result = await requestFeedback(sketch, name);
+    if (id !== requestId.current) return;
+    if ('error' in result) {
+      setPhase({ name: 'error', error: result.error });
+      return;
+    }
+    setPhase({ name: 'result', feedback: result });
+    if (result.status === 'ok') {
+      setSelectedId(result.annotations.find((a) => a.located)?.id ?? null);
+    }
+    // Add Puff's real notes to today's post, for the feed (never the demo sample).
+    const ok = result.status === 'ok' ? result : null;
+    const sketchId = toDateKey(new Date());
+    updatePostedToday({
+      feedback: ok ? `${ok.overallReaction} ${getCompliments(ok)[0]?.comment ?? ''}`.trim() : undefined,
+      analysis: { sketchId, status: result.status, feedback: result, analyzedAt: Date.now() },
+    });
+  };
+
+  // Start looking as soon as the screen opens.
+  const started = useRef(false);
+  useEffect(() => {
+    if (started.current || !submission) return;
+    started.current = true;
+    void analyze(submission);
+    // Runs once, on open.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   if (!submission) {
     return (
       <Screen>
@@ -109,20 +145,9 @@ export default function FeedbackScreen() {
     );
   }
 
-  const getFeedback = async () => {
-    const id = ++requestId.current;
+  const getFeedback = () => {
     setPhase({ name: 'loading' });
-    setSelectedId(null);
-    const result = await requestFeedback(submission, name);
-    if (id !== requestId.current) return;
-    if ('error' in result) {
-      setPhase({ name: 'error', error: result.error });
-      return;
-    }
-    setPhase({ name: 'result', feedback: result });
-    if (result.status === 'ok') {
-      setSelectedId(result.annotations.find((a) => a.located)?.id ?? null);
-    }
+    void analyze(submission);
   };
 
   const retake = async (source: 'camera' | 'library') => {
@@ -132,10 +157,14 @@ export default function FeedbackScreen() {
       if (message) Alert.alert('Hmm', message);
       return;
     }
-    requestId.current++;
+    // The new photo replaces today's posted one, then Puff looks at it.
+    updatePostedToday({
+      image: picked.submission.image,
+      medium: picked.submission.medium === 'paper' ? 'paper' : 'upload',
+    });
     setSubmission(picked.submission);
-    setPhase({ name: 'preview' });
-    setSelectedId(null);
+    setPhase({ name: 'loading' });
+    void analyze(picked.submission);
   };
 
   const showDemo = () => {
@@ -149,7 +178,7 @@ export default function FeedbackScreen() {
   const ok = feedback?.status === 'ok' ? feedback : null;
 
   let mood: SmudgeMood = 'happy';
-  let bubble = 'ooh is this the one?? tap “Get feedback” and I’ll take a look!';
+  let bubble = 'ooh, let me see!';
   if (phase.name === 'loading') {
     mood = waitTick % 2 === 0 ? 'squint' : 'thinking';
     bubble = '';
@@ -162,40 +191,17 @@ export default function FeedbackScreen() {
     bubble = feedback.overallReaction;
   }
 
-  /**
-   * Posts today's sketch: unlocks the friends feed and shows the team's streak completion
-   * screen, then Home shows the feed with this sketch and Puff's feedback.
-   * Feedback is only attached when it's Puff's real feedback on THIS sketch (never the demo).
-   */
-  const post = () => {
-    const real = phase.name === 'result' ? phase.feedback : null;
-    const okReal = real?.status === 'ok' ? real : null;
-    const sketchId = toDateKey(new Date());
-    markPostedToday({
-      id: sketchId,
-      seconds: submission.seconds,
-      image: submission.image,
-      medium: submission.medium === 'paper' ? 'paper' : 'upload',
-      // Short version for the feed: the reaction plus the first compliment.
-      feedback: okReal
-        ? `${okReal.overallReaction} ${getCompliments(okReal)[0]?.comment ?? ''}`.trim()
-        : undefined,
-      // Full structured result: 2 compliments + 1 tip with annotation boxes.
-      analysis: {
-        sketchId,
-        status: real ? real.status : phase.name === 'error' ? 'failed' : 'skipped',
-        feedback: real ?? undefined,
-        analyzedAt: real ? Date.now() : undefined,
-      },
-    });
-    router.replace('/complete');
+  /** On to the friends' feed (Home shows it now that today's sketch is posted). */
+  const toFeed = () => {
+    playSound('unlock-feed');
+    router.dismissTo('/');
   };
 
-  /** Never lose a streak to an AI hiccup: post the sketch without feedback. */
-  const postAnyway = (
-    <Pressable accessibilityRole="button" onPress={post} hitSlop={8} style={styles.link}>
+  /** Never let an AI hiccup hold anyone up: the feed is always one tap away. */
+  const skipToFeed = (
+    <Pressable accessibilityRole="button" onPress={toFeed} hitSlop={8} style={styles.link}>
       <ThemedText type="small" themeColor="textSecondary">
-        Post my sketch without feedback
+        Skip to friends’ sketches
       </ThemedText>
     </Pressable>
   );
@@ -252,15 +258,7 @@ export default function FeedbackScreen() {
       {ok && <Observations feedback={ok} selectedId={selectedId} onSelect={setSelectedId} />}
 
       <View style={styles.actions}>
-        {phase.name === 'preview' && (
-          <>
-            <PrimaryButton label="✨  Get feedback" onPress={getFeedback} />
-            <View style={styles.row}>
-              <SecondaryButton label="📷 Retake" onPress={() => retake('camera')} />
-              <SecondaryButton label="🖼️ Choose another" onPress={() => retake('library')} />
-            </View>
-          </>
-        )}
+        {phase.name === 'loading' && skipToFeed}
 
         {phase.name === 'error' && (
           <>
@@ -277,7 +275,7 @@ export default function FeedbackScreen() {
                 </ThemedText>
               </Pressable>
             )}
-            {postAnyway}
+            {skipToFeed}
           </>
         )}
 
@@ -285,7 +283,7 @@ export default function FeedbackScreen() {
           <>
             <PrimaryButton label="📷  Scan again" onPress={() => retake('camera')} />
             <SecondaryButton label="Choose from photos" onPress={() => retake('library')} />
-            {postAnyway}
+            {skipToFeed}
           </>
         )}
 
@@ -294,10 +292,10 @@ export default function FeedbackScreen() {
             {isDemo ? (
               <>
                 <PrimaryButton label="Try my sketch again" onPress={getFeedback} />
-                {postAnyway}
+                {skipToFeed}
               </>
             ) : (
-              <PrimaryButton label="Post today’s sketch 🎉" onPress={post} />
+              <PrimaryButton label="See friends’ sketches 👀" onPress={toFeed} />
             )}
           </>
         )}
